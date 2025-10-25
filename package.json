@@ -1,0 +1,26 @@
+{
+  "name": "my-coach-finder-android",
+  "version": "1.0.0",
+  "description": "My Coach Finder Android App",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'No build needed'",
+    "android": "cap sync android && cap open android"
+  },
+  "keywords": [
+    "capacitor",
+    "android",
+    "webview"
+  ],
+  "author": "My Coach Finder",
+  "license": "ISC",
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/browser": "^6.0.5",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/push-notifications": "^6.0.4"
+  }
+}

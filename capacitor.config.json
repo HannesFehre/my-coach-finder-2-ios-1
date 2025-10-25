@@ -1,0 +1,14 @@
+{
+  "appId": "com.mycoachfinder.app",
+  "appName": "My Coach Finder",
+  "webDir": "www",
+  "server": {
+    "url": "https://app.my-coach-finder.com/go",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "227481000681",
+    "project_id": "my-caoch-finder-2",
+    "storage_bucket": "my-caoch-finder-2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:227481000681:android:678800bd95339e84e1ae78",
+        "android_client_info": {
+          "package_name": "com.mycoachfinder.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASGtXtZQmzKZnjIEplstnhz1c6c37kMow"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
