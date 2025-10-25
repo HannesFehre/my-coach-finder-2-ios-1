@@ -88,11 +88,18 @@ public class MainActivity extends BridgeActivity {
         String nativeAuthScript =
             "(function(){" +
             "if(!window.Capacitor)return;" +
-            "console.log('[Session] Initializing persistent session manager');" +
-            "const Prefs=window.Capacitor.Plugins.Preferences;" +
+            "console.log('[Native Bridge] Injecting native auth and session manager');" +
+
+            // Session Manager with fallback
             "window.SessionManager={" +
             "checkAndRestore:async function(){" +
+            "try{" +
             "console.log('[Session] Checking for saved session...');" +
+            "if(!window.Capacitor.Plugins||!window.Capacitor.Plugins.Preferences){" +
+            "console.log('[Session] Preferences plugin not available, using localStorage only');" +
+            "return false;" +
+            "}" +
+            "const Prefs=window.Capacitor.Plugins.Preferences;" +
             "const token=await Prefs.get({key:'auth_token'});" +
             "const user=await Prefs.get({key:'auth_user'});" +
             "if(token.value&&user.value){" +
@@ -101,28 +108,56 @@ public class MainActivity extends BridgeActivity {
             "localStorage.setItem('user',user.value);" +
             "return true;" +
             "}" +
+            "}catch(e){console.error('[Session] Error restoring:',e);}" +
             "return false;" +
             "}," +
             "save:async function(token,user){" +
-            "console.log('[Session] Saving session');" +
+            "try{" +
+            "console.log('[Session] Saving session to localStorage');" +
+            "localStorage.setItem('token',token);" +
+            "localStorage.setItem('user',user);" +
+            "if(window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences){" +
+            "console.log('[Session] Also saving to persistent storage');" +
+            "const Prefs=window.Capacitor.Plugins.Preferences;" +
             "await Prefs.set({key:'auth_token',value:token});" +
             "await Prefs.set({key:'auth_user',value:user});" +
+            "console.log('[Session] Saved successfully');" +
+            "}else{" +
+            "console.log('[Session] Preferences not available, localStorage only');" +
+            "}" +
+            "}catch(e){console.error('[Session] Error saving:',e);}" +
             "}," +
             "clear:async function(){" +
+            "try{" +
             "console.log('[Session] Clearing session');" +
-            "await Prefs.remove({key:'auth_token'});" +
-            "await Prefs.remove({key:'auth_user'});" +
             "localStorage.removeItem('token');" +
             "localStorage.removeItem('user');" +
+            "if(window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences){" +
+            "const Prefs=window.Capacitor.Plugins.Preferences;" +
+            "await Prefs.remove({key:'auth_token'});" +
+            "await Prefs.remove({key:'auth_user'});" +
+            "}" +
+            "}catch(e){console.error('[Session] Error clearing:',e);}" +
             "}" +
             "};" +
+
+            // Auto-restore session on login pages OR detect logout
             "setTimeout(async function(){" +
             "const currentUrl=window.location.href;" +
-            "if(currentUrl.includes('/auth/login')||currentUrl.includes('/auth/signup')){" +
+            "const isLoginPage=currentUrl.includes('/auth/login')||currentUrl.includes('/auth/signup');" +
+            "const hasToken=localStorage.getItem('token');" +
+
+            "if(isLoginPage){" +
+            "if(hasToken){" +
+            "console.log('[Session] On login page with token, attempting auto-login');" +
             "const restored=await window.SessionManager.checkAndRestore();" +
             "if(restored){" +
             "console.log('[Session] Auto-login successful, redirecting');" +
             "window.location.href='https://app.my-coach-finder.com/';" +
+            "}" +
+            "}else{" +
+            "console.log('[Session] On login page without token, clearing any persisted session');" +
+            "await window.SessionManager.clear();" +
             "}" +
             "}else{" +
             "const token=localStorage.getItem('token');" +
@@ -132,6 +167,8 @@ public class MainActivity extends BridgeActivity {
             "}" +
             "}" +
             "},500);" +
+
+            // Click event listener for Google Sign-In ONLY
             "document.addEventListener('click',async function(e){" +
             "let el=e.target;" +
             "for(let i=0;i<5&&el;i++){" +
@@ -141,17 +178,66 @@ public class MainActivity extends BridgeActivity {
             "const txt=(el.textContent||'').toLowerCase().trim();" +
             "const cls=String(el.className||'').toLowerCase();" +
             "const id=String(el.id||'').toLowerCase();" +
+            "const dataProvider=String(el.getAttribute('data-provider')||'').toLowerCase();" +
             "const href=String(el.getAttribute('href')||'').toLowerCase();" +
-            "const isLogout=(txt.includes('logout')||txt.includes('sign out')||txt.includes('abmelden')||txt.includes('ausloggen')||cls.includes('logout')||id.includes('logout')||href.includes('logout')||href.includes('signout'));" +
-            "if(isLogout){" +
-            "console.log('[Session] Logout detected, clearing session');" +
-            "await window.SessionManager.clear();" +
-            "break;" +
+
+            // Check for Google Sign-In button - EXTREMELY SPECIFIC
+            "const hasGoogle=(txt.includes('google')||cls.includes('google')||id.includes('google')||dataProvider==='google');" +
+            "const hasSignInKeyword=(txt.includes('continue with google')||txt.includes('sign in with google')||txt.includes('login with google')||txt.includes('anmelden mit google')||txt.includes('mit google'));" +
+            "const isButton=(tag==='button'||(tag==='a'&&!href)||(tag==='div'&&(cls.includes('button')||cls.includes('btn'))));" +
+            "const notAuthRedirect=!href.includes('/auth/google/login')&&!href.includes('/auth/google');" +
+            "const isGoogleSignIn=hasGoogle&&hasSignInKeyword&&isButton&&notAuthRedirect;" +
+
+            "if(isGoogleSignIn){" +
+            "console.log('[Native Bridge] Intercepted Google sign-in button click');" +
+            "e.preventDefault();" +
+            "e.stopPropagation();" +
+
+            // Call native Google Sign-In
+            "console.log('[Native Bridge] Triggering native Google Sign-In...');" +
+            "try{" +
+            "const result=await window.Capacitor.Plugins.NativeAuth.signInWithGoogle();" +
+            "console.log('[Native Bridge] Native auth result:',result);" +
+
+            "if(result&&result.idToken){" +
+            "console.log('[Native Bridge] Got ID token, sending to backend...');" +
+            "const response=await fetch('https://app.my-coach-finder.com/auth/google/native?id_token='+encodeURIComponent(result.idToken),{" +
+            "method:'POST'," +
+            "headers:{'Content-Type':'application/json'}" +
+            "});" +
+            "console.log('[Native Bridge] Backend response status:',response.status);" +
+
+            "if(response.ok){" +
+            "const data=await response.json();" +
+            "console.log('[Native Bridge] Login successful, token:',data.access_token?'present':'missing');" +
+            "const token=data.access_token||data.token;" +
+            "const user=JSON.stringify(data.user||{});" +
+            "localStorage.setItem('token',token);" +
+            "localStorage.setItem('user',user);" +
+            "await window.SessionManager.save(token,user);" +
+            "console.log('[Native Bridge] Redirecting to home...');" +
+            "window.location.href='https://app.my-coach-finder.com/';" +
+            "}else{" +
+            "const errorText=await response.text();" +
+            "console.error('[Native Bridge] Backend returned error:',response.status,errorText);" +
+            "alert('Login failed: '+errorText);" +
             "}" +
+            "}else{" +
+            "console.log('[Native Bridge] No ID token received, user may have cancelled');" +
+            "}" +
+            "}catch(err){" +
+            "console.error('[Native Bridge] Error during native sign-in:',err);" +
+            "alert('Login error: '+err.message);" +
+            "}" +
+
+            "return false;" +
+            "}" +
+
             "el=el.parentElement;" +
             "}" +
             "},true);" +
-            "console.log('[Session] Manager active');" +
+
+            "console.log('[Native Bridge] Native auth bridge active');" +
             "})();";
 
         webView.evaluateJavascript(nativeAuthScript, null);
