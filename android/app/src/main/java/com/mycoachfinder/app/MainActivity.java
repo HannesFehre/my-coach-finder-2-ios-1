@@ -181,17 +181,25 @@ public class MainActivity extends BridgeActivity {
             "const dataProvider=String(el.getAttribute('data-provider')||'').toLowerCase();" +
             "const href=String(el.getAttribute('href')||'').toLowerCase();" +
 
-            // Check for Google Sign-In button - EXTREMELY SPECIFIC
-            "const hasGoogle=(txt.includes('google')||cls.includes('google')||id.includes('google')||dataProvider==='google');" +
-            "const hasSignInKeyword=(txt.includes('continue with google')||txt.includes('sign in with google')||txt.includes('login with google')||txt.includes('anmelden mit google')||txt.includes('mit google'));" +
-            "const isButton=(tag==='button'||(tag==='a'&&!href)||(tag==='div'&&(cls.includes('button')||cls.includes('btn'))));" +
-            "const notAuthRedirect=!href.includes('/auth/google/login')&&!href.includes('/auth/google');" +
-            "const isGoogleSignIn=hasGoogle&&hasSignInKeyword&&isButton&&notAuthRedirect;" +
+            // Check for Google OAuth redirect link
+            "const isGoogleAuthLink=(tag==='a'&&href.includes('/auth/google/login'));" +
 
-            "if(isGoogleSignIn){" +
-            "console.log('[Native Bridge] Intercepted Google sign-in button click');" +
+            "if(isGoogleAuthLink){" +
+            "console.log('[Native Bridge] Intercepted Google OAuth link:',href);" +
             "e.preventDefault();" +
             "e.stopPropagation();" +
+
+            // Extract return_url from href
+            "let returnUrl='https://app.my-coach-finder.com/';" +
+            "const fullHref=el.getAttribute('href')||'';" +
+            "const returnMatch=fullHref.match(/return_url=([^&]+)/);" +
+            "if(returnMatch){" +
+            "returnUrl=decodeURIComponent(returnMatch[1]);" +
+            "if(!returnUrl.startsWith('http')){" +
+            "returnUrl='https://app.my-coach-finder.com'+returnUrl;" +
+            "}" +
+            "console.log('[Native Bridge] Will redirect to:',returnUrl);" +
+            "}" +
 
             // Call native Google Sign-In
             "console.log('[Native Bridge] Triggering native Google Sign-In...');" +
@@ -215,8 +223,8 @@ public class MainActivity extends BridgeActivity {
             "localStorage.setItem('token',token);" +
             "localStorage.setItem('user',user);" +
             "await window.SessionManager.save(token,user);" +
-            "console.log('[Native Bridge] Redirecting to home...');" +
-            "window.location.href='https://app.my-coach-finder.com/';" +
+            "console.log('[Native Bridge] Redirecting to:',returnUrl);" +
+            "window.location.href=returnUrl;" +
             "}else{" +
             "const errorText=await response.text();" +
             "console.error('[Native Bridge] Backend returned error:',response.status,errorText);" +
