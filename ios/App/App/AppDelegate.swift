@@ -8,7 +8,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Use our custom BridgeViewController with native auth injection
+        self.window = UIWindow(frame: UIScreen.main.bounds)
+        let bridgeViewController = BridgeViewController()
+        self.window?.rootViewController = bridgeViewController
+        self.window?.makeKeyAndVisible()
+
         return true
     }
 
