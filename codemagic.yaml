@@ -1,15 +1,18 @@
 workflows:
-  ios-workflow:
-    name: iOS Build
+  # Development build - for testing on your own devices
+  # Does NOT require app to be registered in App Store Connect
+  ios-development:
+    name: iOS Development Build
     max_build_duration: 120
     instance_type: mac_mini_m1
     environment:
       ios_signing:
-        distribution_type: app_store
+        distribution_type: development
         bundle_identifier: com.mycoachfinder.app
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
+        BUNDLE_IDENTIFIER: "com.mycoachfinder.app"
       node: 20.19.5
       xcode: latest
       cocoapods: default
@@ -20,12 +23,12 @@ workflows:
       - name: Install CocoaPods dependencies
         script: |
           cd ios/App && pod install
-      - name: Set up provisioning profiles
+      - name: Set up keychain
         script: |
           keychain initialize
       - name: Fetch signing files
         script: |
-          app-store-connect fetch-signing-files $BUNDLE_IDENTIFIER --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" --type IOS_APP_DEVELOPMENT --create
       - name: Add certificates to keychain
         script: |
           keychain add-certificates
@@ -41,6 +44,63 @@ workflows:
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
     publishing:
+      email:
+        recipients:
+          - your-email@example.com
+        notify:
+          success: true
+          failure: true
+
+  # Production build - for App Store submission
+  # REQUIRES app to be registered in App Store Connect first
+  ios-production:
+    name: iOS Production Build
+    max_build_duration: 120
+    instance_type: mac_mini_m1
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.mycoachfinder.app
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+        BUNDLE_IDENTIFIER: "com.mycoachfinder.app"
+      node: 20.19.5
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm install
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios/App && pod install
+      - name: Set up keychain
+        script: |
+          keychain initialize
+      - name: Fetch signing files
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" --type IOS_APP_STORE --create
+      - name: Add certificates to keychain
+        script: |
+          keychain add-certificates
+      - name: Set up code signing settings
+        script: |
+          xcode-project use-profiles
+      - name: Build iOS app
+        script: |
+          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
       email:
         recipients:
           - your-email@example.com
