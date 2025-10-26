@@ -40,8 +40,13 @@ workflows:
             echo "Error: CM_CERTIFICATE_PASSWORD is not set"
             exit 1
           fi
-          # Decode and save certificate from environment variable
-          echo "$CM_CERTIFICATE" | base64 --decode > /tmp/certificate.p12
+          # Decode and save certificate from environment variable (use printf to avoid echo issues)
+          printf '%s' "$CM_CERTIFICATE" | base64 --decode > /tmp/certificate.p12
+          # Verify the .p12 file was created
+          if [ ! -f /tmp/certificate.p12 ]; then
+            echo "Error: Failed to decode certificate"
+            exit 1
+          fi
           # Import certificate to keychain
           keychain add-certificates --certificate /tmp/certificate.p12 --certificate-password "$CM_CERTIFICATE_PASSWORD"
       - name: Set up provisioning profile
@@ -51,8 +56,13 @@ workflows:
             echo "Error: CM_PROVISIONING_PROFILE is not set"
             exit 1
           fi
-          # Decode and save provisioning profile from environment variable
-          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > /tmp/profile.mobileprovision
+          # Decode and save provisioning profile from environment variable (use printf to avoid echo issues)
+          printf '%s' "$CM_PROVISIONING_PROFILE" | base64 --decode > /tmp/profile.mobileprovision
+          # Verify the profile was created
+          if [ ! -f /tmp/profile.mobileprovision ]; then
+            echo "Error: Failed to decode provisioning profile"
+            exit 1
+          fi
           # Get UUID from profile
           PROFILE_UUID=$(grep UUID -A1 -a /tmp/profile.mobileprovision | grep -io "[-A-F0-9]\{36\}")
           echo "Provisioning profile UUID: $PROFILE_UUID"
