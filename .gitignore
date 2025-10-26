@@ -31,3 +31,11 @@ npm-debug.log*
 # Temporary files
 *.tmp
 *.temp
+
+# Apple credentials (NEVER commit these!)
+*.p8
+AuthKey_*.p8
+*.mobileprovision
+*.certSigningRequest
+*.cer
+*.p12
