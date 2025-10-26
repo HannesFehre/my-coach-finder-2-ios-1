@@ -1,9 +1,10 @@
 import Foundation
 import Capacitor
 import GoogleSignIn
+import WebKit
 
 @objc(NativeAuthPlugin)
-public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
+public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin, WKNavigationDelegate {
     public let identifier = "NativeAuthPlugin"
     public let jsName = "NativeAuth"
     public let pluginMethods: [CAPPluginMethod] = [
@@ -14,10 +15,38 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
     private let googleClientId = "353309305721-ir55d3eiiucm5fda67gsn9gscd8eq146.apps.googleusercontent.com"
 
     override public func load() {
+        // Set this plugin as the navigation delegate for the WebView
+        if let webView = self.bridge?.webView {
+            webView.navigationDelegate = self
+        }
+
         // Inject JavaScript bridge when plugin loads
         // Use a small delay to ensure Capacitor is fully loaded
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.injectJavaScriptBridge()
+        }
+    }
+
+    // MARK: - WKNavigationDelegate
+
+    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        guard let url = navigationAction.request.url else {
+            decisionHandler(.allow)
+            return
+        }
+
+        let urlString = url.absoluteString
+
+        // Allow all navigation within the app domain to stay in WebView
+        // Only open external browser for OAuth callback redirects if needed
+        if urlString.contains("app.my-coach-finder.com") {
+            decisionHandler(.allow)
+        } else if urlString.contains("accounts.google.com") {
+            // Don't open Google OAuth in Safari - our JavaScript will handle it
+            decisionHandler(.cancel)
+        } else {
+            // For other external links, allow them
+            decisionHandler(.allow)
         }
     }
 
