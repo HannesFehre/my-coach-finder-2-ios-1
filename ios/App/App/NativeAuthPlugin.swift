@@ -108,12 +108,33 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                             e.stopPropagation();
                             e.stopImmediatePropagation();
 
+                            // Check if Capacitor and plugin are available
+                            if(!window.Capacitor){
+                                console.error('[iOS] ❌ Capacitor not found!');
+                                alert('Error: Capacitor not loaded');
+                                return false;
+                            }
+
+                            if(!window.Capacitor.Plugins){
+                                console.error('[iOS] ❌ Capacitor.Plugins not found!');
+                                alert('Error: Capacitor plugins not loaded');
+                                return false;
+                            }
+
+                            if(!window.Capacitor.Plugins.NativeAuth){
+                                console.error('[iOS] ❌ NativeAuth plugin not found!');
+                                alert('Error: NativeAuth plugin not loaded. Available plugins: ' + Object.keys(window.Capacitor.Plugins).join(', '));
+                                return false;
+                            }
+
+                            console.log('[iOS] ✅ All checks passed, calling native sign-in...');
+
                             // Call native Google Sign-In
                             (async function(){
                                 try{
-                                    console.log('[iOS] Calling native Google Sign-In...');
+                                    console.log('[iOS] Calling signInWithGoogle()...');
                                     const result=await window.Capacitor.Plugins.NativeAuth.signInWithGoogle();
-                                    console.log('[iOS] Sign-in result:', result);
+                                    console.log('[iOS] Sign-in result:', JSON.stringify(result));
 
                                     if(result?.idToken){
                                         console.log('[iOS] Got ID token, sending to backend...');
@@ -124,7 +145,7 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
 
                                         if(response.ok){
                                             const data=await response.json();
-                                            console.log('[iOS] Backend response:', data);
+                                            console.log('[iOS] Backend response:', JSON.stringify(data));
                                             const token=data.access_token||data.token;
                                             const user=JSON.stringify(data.user||{});
                                             localStorage.setItem('token',token);
@@ -132,11 +153,16 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                                             console.log('[iOS] Token saved, redirecting to home...');
                                             window.location.href='https://app.my-coach-finder.com/';
                                         }else{
-                                            console.error('[iOS] Backend error:', response.status);
+                                            console.error('[iOS] Backend error:', response.status, await response.text());
+                                            alert('Backend authentication failed: ' + response.status);
                                         }
+                                    }else{
+                                        console.error('[iOS] No idToken in result:', JSON.stringify(result));
+                                        alert('Sign-in failed: No ID token received');
                                     }
                                 }catch(err){
-                                    console.error('[iOS] Auth error:',err);
+                                    console.error('[iOS] Auth error:', err.message, err.stack);
+                                    alert('Sign-in error: ' + err.message);
                                 }
                             })();
 
