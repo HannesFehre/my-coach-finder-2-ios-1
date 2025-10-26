@@ -13,6 +13,61 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private let googleClientId = "353309305721-ir55d3eiiucm5fda67gsn9gscd8eq146.apps.googleusercontent.com"
 
+    override public func load() {
+        // Inject JavaScript bridge when plugin loads
+        // Use a small delay to ensure Capacitor is fully loaded
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.injectJavaScriptBridge()
+        }
+    }
+
+    private func injectJavaScriptBridge() {
+        let script = """
+        (function(){
+            if(!window.Capacitor)return;
+            console.log('[Native Bridge iOS] Injecting auth bridge');
+
+            // Click listener for Google OAuth links
+            document.addEventListener('click',async function(e){
+                let el=e.target;
+                for(let i=0;i<5&&el;i++){
+                    const href=String(el.getAttribute('href')||'').toLowerCase();
+                    if(href.includes('/auth/google/login')){
+                        console.log('[iOS] Intercepted Google OAuth click');
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        try{
+                            const result=await window.Capacitor.Plugins.NativeAuth.signInWithGoogle();
+                            if(result?.idToken){
+                                const response=await fetch('https://app.my-coach-finder.com/auth/google/native?id_token='+encodeURIComponent(result.idToken),{
+                                    method:'POST',
+                                    headers:{'Content-Type':'application/json'}
+                                });
+                                if(response.ok){
+                                    const data=await response.json();
+                                    const token=data.access_token||data.token;
+                                    const user=JSON.stringify(data.user||{});
+                                    localStorage.setItem('token',token);
+                                    localStorage.setItem('user',user);
+                                    window.location.href='https://app.my-coach-finder.com/';
+                                }
+                            }
+                        }catch(err){
+                            console.error('[iOS] Auth error:',err);
+                        }
+                        return false;
+                    }
+                    el=el.parentElement;
+                    if(!el)break;
+                }
+            },true);
+        })();
+        """
+
+        self.bridge?.webView?.evaluateJavaScript(script, completionHandler: nil)
+    }
+
     @objc func signInWithGoogle(_ call: CAPPluginCall) {
         guard let presentingViewController = self.bridge?.viewController else {
             call.reject("Unable to get view controller")
