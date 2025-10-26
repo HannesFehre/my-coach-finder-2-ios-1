@@ -25,16 +25,31 @@ workflows:
           keychain initialize
       - name: Set up signing certificate
         script: |
+          # Verify environment variables are set
+          if [ -z "$CM_CERTIFICATE" ]; then
+            echo "Error: CM_CERTIFICATE is not set"
+            exit 1
+          fi
+          if [ -z "$CM_CERTIFICATE_PASSWORD" ]; then
+            echo "Error: CM_CERTIFICATE_PASSWORD is not set"
+            exit 1
+          fi
           # Decode and save certificate from environment variable
-          echo $CM_CERTIFICATE | base64 --decode > /tmp/certificate.p12
+          echo "$CM_CERTIFICATE" | base64 --decode > /tmp/certificate.p12
           # Import certificate to keychain
-          keychain add-certificates --certificate /tmp/certificate.p12 --certificate-password $CM_CERTIFICATE_PASSWORD
+          keychain add-certificates --certificate /tmp/certificate.p12 --certificate-password "$CM_CERTIFICATE_PASSWORD"
       - name: Set up provisioning profile
         script: |
+          # Verify environment variable is set
+          if [ -z "$CM_PROVISIONING_PROFILE" ]; then
+            echo "Error: CM_PROVISIONING_PROFILE is not set"
+            exit 1
+          fi
           # Decode and save provisioning profile from environment variable
-          echo $CM_PROVISIONING_PROFILE | base64 --decode > /tmp/profile.mobileprovision
+          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > /tmp/profile.mobileprovision
           # Get UUID from profile
           PROFILE_UUID=$(grep UUID -A1 -a /tmp/profile.mobileprovision | grep -io "[-A-F0-9]\{36\}")
+          echo "Provisioning profile UUID: $PROFILE_UUID"
           # Copy to the right location
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$PROFILE_UUID.mobileprovision
