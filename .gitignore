@@ -43,3 +43,5 @@ AuthKey_*.p8
 *.key
 ios_distribution.*
 ios_development.*
+*_base64.txt
+*base64.txt
