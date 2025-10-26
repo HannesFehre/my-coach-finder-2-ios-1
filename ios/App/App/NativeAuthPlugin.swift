@@ -36,11 +36,11 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
         let urlString = url.absoluteString
         NSLog("[NativeAuth] shouldOverrideLoad called for URL: %@", urlString)
 
-        // Keep all app domain URLs in WebView (don't open in Safari)
-        if urlString.contains("app.my-coach-finder.com") {
-            NSLog("[NativeAuth] ✅ Allowing app domain in WebView: %@", urlString)
-            // Return false to allow loading in WebView
-            return false
+        // Block Google OAuth login path - JavaScript will handle with native sign-in
+        if urlString.contains("/auth/google/login") {
+            NSLog("[NativeAuth] ❌ Blocking OAuth login path (native sign-in will handle): %@", urlString)
+            // Return true to prevent loading
+            return true
         }
 
         // Block Google OAuth redirects - our native sign-in will handle this
@@ -48,6 +48,13 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
             NSLog("[NativeAuth] ❌ Blocking Google OAuth URL: %@", urlString)
             // Return true to prevent loading (JavaScript will handle it)
             return true
+        }
+
+        // Keep all app domain URLs in WebView (don't open in Safari)
+        if urlString.contains("app.my-coach-finder.com") {
+            NSLog("[NativeAuth] ✅ Allowing app domain in WebView: %@", urlString)
+            // Return false to allow loading in WebView
+            return false
         }
 
         // For all other URLs, use Capacitor's default behavior
@@ -84,39 +91,59 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                 return originalOpen.call(this, url, target, features);
             };
 
-            // Click listener for Google OAuth links
-            document.addEventListener('click',async function(e){
+            // Click listener for Google OAuth links - CAPTURE PHASE (runs first)
+            document.addEventListener('click',function(e){
                 let el=e.target;
-                for(let i=0;i<5&&el;i++){
-                    const href=String(el.getAttribute('href')||'').toLowerCase();
-                    if(href.includes('/auth/google/login')){
-                        console.log('[iOS] Intercepted Google OAuth click');
-                        e.preventDefault();
-                        e.stopPropagation();
+                console.log('[iOS] Click detected on:', el.tagName, el.className);
 
-                        try{
-                            const result=await window.Capacitor.Plugins.NativeAuth.signInWithGoogle();
-                            if(result?.idToken){
-                                const response=await fetch('https://app.my-coach-finder.com/auth/google/native?id_token='+encodeURIComponent(result.idToken),{
-                                    method:'POST',
-                                    headers:{'Content-Type':'application/json'}
-                                });
-                                if(response.ok){
-                                    const data=await response.json();
-                                    const token=data.access_token||data.token;
-                                    const user=JSON.stringify(data.user||{});
-                                    localStorage.setItem('token',token);
-                                    localStorage.setItem('user',user);
-                                    window.location.href='https://app.my-coach-finder.com/';
+                // Traverse up to 5 levels to find parent with href
+                for(let i=0;i<5&&el;i++){
+                    const href=el.getAttribute('href');
+                    if(href){
+                        console.log('[iOS] Found href:', href);
+
+                        if(href.includes('/auth/google/login')){
+                            console.log('[iOS] ✅ Intercepted Google OAuth link - preventing default');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+
+                            // Call native Google Sign-In
+                            (async function(){
+                                try{
+                                    console.log('[iOS] Calling native Google Sign-In...');
+                                    const result=await window.Capacitor.Plugins.NativeAuth.signInWithGoogle();
+                                    console.log('[iOS] Sign-in result:', result);
+
+                                    if(result?.idToken){
+                                        console.log('[iOS] Got ID token, sending to backend...');
+                                        const response=await fetch('https://app.my-coach-finder.com/auth/google/native?id_token='+encodeURIComponent(result.idToken),{
+                                            method:'POST',
+                                            headers:{'Content-Type':'application/json'}
+                                        });
+
+                                        if(response.ok){
+                                            const data=await response.json();
+                                            console.log('[iOS] Backend response:', data);
+                                            const token=data.access_token||data.token;
+                                            const user=JSON.stringify(data.user||{});
+                                            localStorage.setItem('token',token);
+                                            localStorage.setItem('user',user);
+                                            console.log('[iOS] Token saved, redirecting to home...');
+                                            window.location.href='https://app.my-coach-finder.com/';
+                                        }else{
+                                            console.error('[iOS] Backend error:', response.status);
+                                        }
+                                    }
+                                }catch(err){
+                                    console.error('[iOS] Auth error:',err);
                                 }
-                            }
-                        }catch(err){
-                            console.error('[iOS] Auth error:',err);
+                            })();
+
+                            return false;
                         }
-                        return false;
                     }
                     el=el.parentElement;
-                    if(!el)break;
                 }
             },true);
         })();
