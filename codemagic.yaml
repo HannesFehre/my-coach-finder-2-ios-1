@@ -6,9 +6,6 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m1
     environment:
-      ios_signing:
-        distribution_type: development
-        bundle_identifier: com.mycoachfinder.app
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
@@ -26,10 +23,21 @@ workflows:
       - name: Set up keychain
         script: |
           keychain initialize
-      - name: Add certificates to keychain (manual signing)
+      - name: Set up signing certificate
         script: |
-          # Use manually uploaded certificate and provisioning profile
-          keychain add-certificates
+          # Decode and save certificate from environment variable
+          echo $CM_CERTIFICATE | base64 --decode > /tmp/certificate.p12
+          # Import certificate to keychain
+          keychain add-certificates --certificate /tmp/certificate.p12 --certificate-password $CM_CERTIFICATE_PASSWORD
+      - name: Set up provisioning profile
+        script: |
+          # Decode and save provisioning profile from environment variable
+          echo $CM_PROVISIONING_PROFILE | base64 --decode > /tmp/profile.mobileprovision
+          # Get UUID from profile
+          PROFILE_UUID=$(grep UUID -A1 -a /tmp/profile.mobileprovision | grep -io "[-A-F0-9]\{36\}")
+          # Copy to the right location
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$PROFILE_UUID.mobileprovision
       - name: Set up code signing settings
         script: |
           xcode-project use-profiles
