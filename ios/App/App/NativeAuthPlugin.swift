@@ -15,9 +15,12 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
     private let googleClientId = "353309305721-ir55d3eiiucm5fda67gsn9gscd8eq146.apps.googleusercontent.com"
 
     override public func load() {
+        NSLog("[NativeAuth] ✅ Plugin loaded successfully")
+
         // Inject JavaScript bridge when plugin loads
         // Use a small delay to ensure Capacitor is fully loaded
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            NSLog("[NativeAuth] Injecting JavaScript bridge now...")
             self.injectJavaScriptBridge()
         }
     }
@@ -26,24 +29,29 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc override public func shouldOverrideLoad(_ navigationAction: WKNavigationAction) -> NSNumber? {
         guard let url = navigationAction.request.url else {
+            NSLog("[NativeAuth] shouldOverrideLoad: No URL in navigation action")
             return nil
         }
 
         let urlString = url.absoluteString
+        NSLog("[NativeAuth] shouldOverrideLoad called for URL: %@", urlString)
 
         // Keep all app domain URLs in WebView (don't open in Safari)
         if urlString.contains("app.my-coach-finder.com") {
+            NSLog("[NativeAuth] ✅ Allowing app domain in WebView: %@", urlString)
             // Return false to allow loading in WebView
             return false
         }
 
         // Block Google OAuth redirects - our native sign-in will handle this
         if urlString.contains("accounts.google.com") {
+            NSLog("[NativeAuth] ❌ Blocking Google OAuth URL: %@", urlString)
             // Return true to prevent loading (JavaScript will handle it)
             return true
         }
 
         // For all other URLs, use Capacitor's default behavior
+        NSLog("[NativeAuth] Using default behavior for URL: %@", urlString)
         return nil
     }
 
