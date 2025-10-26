@@ -26,10 +26,15 @@ workflows:
       - name: Set up keychain
         script: |
           keychain initialize
-      - name: Fetch signing files (with verbose logging)
+      - name: Fetch signing files (create cert + profile)
         script: |
           set -x
-          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" --type IOS_APP_ADHOC --create --verbose
+          # Fetch or create certificate and provisioning profile
+          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" \
+            --type IOS_APP_ADHOC \
+            --create \
+            --strict-match-identifier \
+            --verbose
       - name: Add certificates to keychain
         script: |
           keychain add-certificates
