@@ -39,3 +39,7 @@ AuthKey_*.p8
 *.certSigningRequest
 *.cer
 *.p12
+*.pem
+*.key
+ios_distribution.*
+ios_development.*

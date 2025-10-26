@@ -26,17 +26,9 @@ workflows:
       - name: Set up keychain
         script: |
           keychain initialize
-      - name: Fetch signing files (create cert + profile)
+      - name: Add certificates to keychain (manual signing)
         script: |
-          set -x
-          # Fetch or create certificate and provisioning profile
-          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" \
-            --type IOS_APP_DEVELOPMENT \
-            --create \
-            --strict-match-identifier \
-            --verbose
-      - name: Add certificates to keychain
-        script: |
+          # Use manually uploaded certificate and provisioning profile
           keychain add-certificates
       - name: Set up code signing settings
         script: |
