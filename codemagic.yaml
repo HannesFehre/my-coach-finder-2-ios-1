@@ -7,7 +7,7 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       ios_signing:
-        distribution_type: development
+        distribution_type: ad_hoc
         bundle_identifier: com.mycoachfinder.app
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
@@ -28,7 +28,7 @@ workflows:
           keychain initialize
       - name: Fetch signing files
         script: |
-          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" --type IOS_APP_DEVELOPMENT --create
+          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" --type IOS_APP_ADHOC --create
       - name: Add certificates to keychain
         script: |
           keychain add-certificates
