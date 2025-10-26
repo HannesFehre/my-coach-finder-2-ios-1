@@ -48,10 +48,22 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     private func injectJavaScriptBridge() {
+        // Get app version from bundle
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+
         let script = """
         (function(){
             if(!window.Capacitor)return;
             console.log('[Native Bridge iOS] Injecting auth bridge');
+            console.log('[iOS App Version] \(version) (Build \(build))');
+
+            // Add visible version overlay
+            const versionDiv = document.createElement('div');
+            versionDiv.id = 'ios-version-badge';
+            versionDiv.textContent = 'iOS v\(version).\(build)';
+            versionDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.7);color:#fff;padding:5px 10px;border-radius:5px;font-size:12px;font-family:monospace;z-index:999999;';
+            document.body.appendChild(versionDiv);
 
             // Click listener for Google OAuth links
             document.addEventListener('click',async function(e){
