@@ -23,6 +23,21 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
             NSLog("[NativeAuth] Injecting JavaScript bridge now...")
             self.injectJavaScriptBridge()
         }
+
+        // Re-inject JavaScript on every page finish loading
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(pageDidFinishLoading),
+            name: Notification.Name.capacitorDidFinishLoad,
+            object: nil
+        )
+    }
+
+    @objc func pageDidFinishLoading() {
+        NSLog("[NativeAuth] Page finished loading, re-injecting JavaScript...")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.injectJavaScriptBridge()
+        }
     }
 
     // MARK: - Capacitor Navigation Override
@@ -36,14 +51,7 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
         let urlString = url.absoluteString
         NSLog("[NativeAuth] shouldOverrideLoad called for URL: %@", urlString)
 
-        // Block Google OAuth login path - JavaScript will handle with native sign-in
-        if urlString.contains("/auth/google/login") {
-            NSLog("[NativeAuth] ❌ Blocking OAuth login path (native sign-in will handle): %@", urlString)
-            // Return true to prevent loading
-            return true
-        }
-
-        // Block Google OAuth redirects - our native sign-in will handle this
+        // Block Google OAuth redirects to accounts.google.com - our native sign-in handles this
         if urlString.contains("accounts.google.com") {
             NSLog("[NativeAuth] ❌ Blocking Google OAuth URL: %@", urlString)
             // Return true to prevent loading (JavaScript will handle it)
