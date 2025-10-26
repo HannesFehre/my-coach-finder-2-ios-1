@@ -6,10 +6,16 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m1
     environment:
+      groups:
+        - ios_signing
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
         BUNDLE_IDENTIFIER: "com.mycoachfinder.app"
+        # Certificate and provisioning profile (set as secure environment variables)
+        # CM_CERTIFICATE: base64-encoded .p12 certificate
+        # CM_CERTIFICATE_PASSWORD: password for .p12
+        # CM_PROVISIONING_PROFILE: base64-encoded .mobileprovision
       node: 20.19.5
       xcode: latest
       cocoapods: default
