@@ -4,7 +4,11 @@
   "webDir": "www",
   "server": {
     "url": "https://app.my-coach-finder.com/go",
-    "cleartext": false
+    "cleartext": false,
+    "allowNavigation": [
+      "app.my-coach-finder.com",
+      "*.my-coach-finder.com"
+    ]
   },
   "android": {
     "allowMixedContent": false,

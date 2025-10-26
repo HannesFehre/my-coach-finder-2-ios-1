@@ -73,6 +73,17 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
             versionDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.7);color:#fff;padding:5px 10px;border-radius:5px;font-size:12px;font-family:monospace;z-index:999999;';
             document.body.appendChild(versionDiv);
 
+            // Override window.open to keep navigation in WebView
+            const originalOpen = window.open;
+            window.open = function(url, target, features) {
+                // If opening app domain URLs, force them to stay in WebView
+                if(url && url.includes('my-coach-finder.com')){
+                    console.log('[iOS] Intercepting window.open, keeping in WebView:', url);
+                    return originalOpen.call(this, url, '_self', features);
+                }
+                return originalOpen.call(this, url, target, features);
+            };
+
             // Click listener for Google OAuth links
             document.addEventListener('click',async function(e){
                 let el=e.target;
