@@ -4,7 +4,7 @@ import GoogleSignIn
 import WebKit
 
 @objc(NativeAuthPlugin)
-public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin, WKNavigationDelegate {
+public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "NativeAuthPlugin"
     public let jsName = "NativeAuth"
     public let pluginMethods: [CAPPluginMethod] = [
@@ -15,11 +15,6 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin, WKNavigationDelegate
     private let googleClientId = "353309305721-ir55d3eiiucm5fda67gsn9gscd8eq146.apps.googleusercontent.com"
 
     override public func load() {
-        // Set this plugin as the navigation delegate for the WebView
-        if let webView = self.bridge?.webView {
-            webView.navigationDelegate = self
-        }
-
         // Inject JavaScript bridge when plugin loads
         // Use a small delay to ensure Capacitor is fully loaded
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -27,27 +22,29 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin, WKNavigationDelegate
         }
     }
 
-    // MARK: - WKNavigationDelegate
+    // MARK: - Capacitor Navigation Override
 
-    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+    @objc override public func shouldOverrideLoad(_ navigationAction: WKNavigationAction) -> NSNumber? {
         guard let url = navigationAction.request.url else {
-            decisionHandler(.allow)
-            return
+            return nil
         }
 
         let urlString = url.absoluteString
 
-        // Allow all navigation within the app domain to stay in WebView
-        // Only open external browser for OAuth callback redirects if needed
+        // Keep all app domain URLs in WebView (don't open in Safari)
         if urlString.contains("app.my-coach-finder.com") {
-            decisionHandler(.allow)
-        } else if urlString.contains("accounts.google.com") {
-            // Don't open Google OAuth in Safari - our JavaScript will handle it
-            decisionHandler(.cancel)
-        } else {
-            // For other external links, allow them
-            decisionHandler(.allow)
+            // Return false to allow loading in WebView
+            return false
         }
+
+        // Block Google OAuth redirects - our native sign-in will handle this
+        if urlString.contains("accounts.google.com") {
+            // Return true to prevent loading (JavaScript will handle it)
+            return true
+        }
+
+        // For all other URLs, use Capacitor's default behavior
+        return nil
     }
 
     private func injectJavaScriptBridge() {
