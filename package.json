@@ -5,7 +5,8 @@
   "main": "index.html",
   "scripts": {
     "build": "echo 'No build needed'",
-    "android": "cap sync android && cap open android"
+    "android": "cap sync android && cap open android",
+    "ios": "cap sync ios && cap open ios"
   },
   "keywords": [
     "capacitor",
@@ -21,6 +22,7 @@
     "@capacitor/android": "^6.0.0",
     "@capacitor/browser": "^6.0.5",
     "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.2.1",
     "@capacitor/preferences": "^6.0.3",
     "@capacitor/push-notifications": "^6.0.4"
   }
