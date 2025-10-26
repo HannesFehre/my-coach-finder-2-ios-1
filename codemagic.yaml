@@ -7,7 +7,7 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       groups:
-        - 1
+        - "1"
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
