@@ -26,6 +26,10 @@ workflows:
       - name: Install CocoaPods dependencies
         script: |
           cd ios/App && pod install
+      - name: Sync Capacitor assets to iOS
+        script: |
+          # Copy web assets and config to iOS app
+          npx cap sync ios
       - name: Set up keychain
         script: |
           keychain initialize
@@ -132,6 +136,10 @@ workflows:
       - name: Install CocoaPods dependencies
         script: |
           cd ios/App && pod install
+      - name: Sync Capacitor assets to iOS
+        script: |
+          # Copy web assets and config to iOS app
+          npx cap sync ios
       - name: Set up keychain
         script: |
           keychain initialize
