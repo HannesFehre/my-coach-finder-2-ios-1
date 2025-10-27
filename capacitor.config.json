@@ -10,11 +10,6 @@
       "*.my-coach-finder.com"
     ]
   },
-  "android": {
-    "allowMixedContent": false,
-    "captureInput": true,
-    "webContentsDebuggingEnabled": true
-  },
   "ios": {
     "contentInset": "automatic"
   }

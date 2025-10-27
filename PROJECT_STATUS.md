@@ -1,19 +1,12 @@
-# My Coach Finder - iOS/Android App Project Status
+# My Coach Finder - iOS App Project Status
 
-**Last Updated:** October 26, 2025
+**Last Updated:** October 27, 2025
 **Current Version:** iOS v1.1.12 (Build 12)
 **Status:** ✅ iOS Building Successfully | ⏳ Google OAuth Testing Pending
 
 ---
 
 ## 📱 Platform Status
-
-### Android
-- ✅ **FULLY WORKING**
-- Native Google Sign-In implemented
-- Session persistence working
-- APK builds successfully
-- Latest APK: `android/app/build/outputs/apk/debug/app-debug.apk` (3.6MB)
 
 ### iOS
 - ✅ **BUILDS SUCCESSFULLY** on Codemagic
@@ -28,13 +21,11 @@
 ## 🎨 Branding & UI
 
 ### App Icons
-- ✅ Android icons configured
 - ✅ iOS app icon: 1024x1024 from `Logo/logo_output/ios_app/`
 - ✅ Home screen icon displays correctly
 - ⏳ App switcher icon - testing v1.1.12 fix
 
 ### Splash Screens
-- ✅ Android splash screen configured
 - ✅ iOS splash screen: 2732x2732 with My Coach Finder logo
 - ✅ White background with centered logo
 
@@ -46,15 +37,6 @@
 ---
 
 ## 🔐 Authentication
-
-### Android OAuth Flow
-```
-1. User opens app → Login page in WebView ✅
-2. Click Google button → Native account picker opens ✅
-3. Select account → ID token retrieved ✅
-4. Send to backend → Session created ✅
-5. Redirect to home page ✅
-```
 
 ### iOS OAuth Flow (In Progress)
 ```
@@ -91,23 +73,16 @@
 - Auto-provisioning via App Store Connect API
 - Submit to TestFlight enabled
 
-### Android Build
-- Gradle: 8.2.1
-- Build command: `./gradlew assembleDebug`
-- Output: `android/app/build/outputs/apk/debug/app-debug.apk`
-
 ---
 
 ## 📦 Key Dependencies
 
 ### Capacitor
 - `@capacitor/core`: 6.x
-- `@capacitor/android`: 6.x
 - `@capacitor/ios`: 6.x
 - `@capacitor/preferences`: 6.0.0
 
 ### Native Libraries
-- **Android:** Google Play Services Auth 20.7.0
 - **iOS:** GoogleSignIn SDK (via CocoaPods)
 
 ### Configuration
@@ -133,15 +108,6 @@
 - `setupUserScript()` - Injects JavaScript using WKUserScript
 - `signInWithGoogle()` - Native iOS Google Sign-In
 - `shouldOverrideLoad()` - Controls WebView navigation
-
-### Android Native Google Sign-In
-**File:** `android/app/src/main/java/com/mycoachfinder/app/MainActivity.java`
-
-**Features:**
-- JavaScript bridge injection
-- Click interception (same logic as iOS)
-- Native Android Google Sign-In
-- Session management
 
 ---
 
@@ -189,12 +155,7 @@
 ## 📂 Project Structure
 
 ```
-andruid/
-├── android/                    # Android native code
-│   └── app/
-│       ├── src/main/java/com/mycoachfinder/app/
-│       │   └── MainActivity.java    # Android Google Sign-In
-│       └── build/outputs/apk/
+appel/
 ├── ios/                        # iOS native code
 │   └── App/
 │       ├── App/
@@ -206,16 +167,17 @@ andruid/
 │       │       └── Splash.imageset/
 │       └── App.xcodeproj/
 ├── Logo/                       # Brand assets (14MB - not committed)
-│   ├── apple_touch/
-│   ├── android/
 │   └── logo_output/
 │       ├── ios_app/
 │       └── store_marketing/
+├── www/                        # Web assets
+│   └── index.html
 ├── capacitor.config.json       # Capacitor configuration
 ├── codemagic.yaml              # CI/CD configuration
 ├── .gitignore                  # Git ignore rules
 ├── IOS_BUILD_STATUS.md         # iOS build documentation
-└── PROJECT_STATUS.md           # This file
+├── PROJECT_STATUS.md           # This file
+└── README.md                   # Main documentation
 
 ```
 
@@ -250,9 +212,6 @@ All sensitive credentials stored in Codemagic environment variable group `ios_si
    - **Status:** ⏳ Pending test
    - **Implementation:** WKUserScript with click interception
 
-### Android
-- ✅ No known issues
-
 ---
 
 ## 📞 Support & Resources
@@ -279,7 +238,7 @@ All sensitive credentials stored in Codemagic environment variable group `ios_si
 ```bash
 # Install dependencies
 npm install
-cd ios/App && pod install
+cd ios/App && pod install && cd ../..
 
 # Sync Capacitor
 npx cap sync ios
@@ -288,17 +247,6 @@ npx cap sync ios
 npx cap open ios
 
 # Build in Xcode or use Codemagic
-```
-
-### Build Android App Locally
-```bash
-# Sync Capacitor
-npx cap sync android
-
-# Build APK
-./gradlew assembleDebug
-
-# Output: android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ### Trigger Codemagic Build via API

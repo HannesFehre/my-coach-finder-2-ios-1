@@ -1,16 +1,15 @@
 {
-  "name": "my-coach-finder-android",
-  "version": "1.0.0",
-  "description": "My Coach Finder Android App",
+  "name": "my-coach-finder-ios",
+  "version": "1.1.12",
+  "description": "My Coach Finder iOS App",
   "main": "index.html",
   "scripts": {
     "build": "echo 'No build needed'",
-    "android": "cap sync android && cap open android",
     "ios": "cap sync ios && cap open ios"
   },
   "keywords": [
     "capacitor",
-    "android",
+    "ios",
     "webview"
   ],
   "author": "My Coach Finder",
@@ -19,7 +18,6 @@
     "@capacitor/cli": "^6.0.0"
   },
   "dependencies": {
-    "@capacitor/android": "^6.0.0",
     "@capacitor/browser": "^6.0.5",
     "@capacitor/core": "^6.0.0",
     "@capacitor/ios": "^6.2.1",
