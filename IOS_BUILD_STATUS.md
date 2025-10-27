@@ -1,238 +1,246 @@
-# iOS Build Status - Resume Here
+# iOS Build Status
 
-**Last Updated:** 2025-10-26
-**Status:** In Progress - Troubleshooting Codemagic certificate/provisioning profile error
-
----
-
-## 🎯 Current Issue
-
-**Error:** `No matching profiles found for bundle identifier "com.mycoachfinder.app" and distribution type "ad_hoc"`
-
-**Cause:** Codemagic cannot automatically create the distribution certificate and provisioning profile.
-
-**Next Step:** Check if your App Store Connect API key has the right permissions.
+**Last Updated:** October 27, 2025
+**Current Version:** v1.1.12 (Build 12)
+**Status:** ✅ Building Successfully on Codemagic
 
 ---
 
-## ✅ What's Been Completed
+## 🎯 Current Status
 
-### 1. iOS Platform Added to Project
-- ✅ iOS platform installed (`npx cap add ios`)
-- ✅ NativeAuthPlugin.swift created (Google Sign-In for iOS)
-- ✅ AppDelegate.swift configured
-- ✅ Podfile updated with Google Sign-In SDK
-- ✅ Info.plist configured with OAuth URL scheme
-- ✅ All changes committed and pushed to GitHub
+### Build Status
+- ✅ **Builds Successfully** on Codemagic CI/CD
+- ✅ **Version:** 1.1.12 (Build 12)
+- ✅ **Platform:** iOS 12.0+
+- ✅ **Distribution:** Development (Ad Hoc)
+- ✅ **Code Signing:** Manual signing with provisioning profile
 
-### 2. Codemagic Configuration
-- ✅ codemagic.yaml created with two workflows:
-  - `ios-development` - For testing (Ad Hoc distribution)
-  - `ios-production` - For App Store/TestFlight
-- ✅ Signed up for Codemagic account
-- ✅ Connected GitHub repository to Codemagic
-
-### 3. App Store Connect API Key Created
-- ✅ Created API key in App Store Connect
-- ✅ Key Name: `Codemagic Build Key`
-- ✅ Key ID: `ZXW6F25R35`
-- ✅ Issuer ID: `d607b8fe-bba2-4c62-b0f3-fc1a424de589`
-- ✅ API key added to Codemagic (Teams → Integrations)
-
-### 4. Apple Developer Setup
-- ⚠️ **Need to verify these were completed:**
-  - Bundle ID `com.mycoachfinder.app` created?
-  - iPhone UDID registered?
+### App Features
+- ✅ **App Icon** - 1024x1024 custom My Coach Finder icon
+- ✅ **Splash Screen** - 2732x2732 branded splash screen
+- ✅ **Status Bar** - Hidden for full-screen native experience
+- ✅ **WebView Navigation** - No Safari redirects, stays in-app
+- ⏳ **Native Google Sign-In** - Implemented, pending final testing
 
 ---
 
-## ❌ What's NOT Working
+## 📦 Build Configuration
 
-### Build Fails with Certificate/Profile Error
+### Codemagic Workflow: `ios-development`
+```yaml
+Instance: Mac mini M1
+Xcode: latest
+Node.js: 20.19.5
+Distribution: Development (Ad Hoc)
+Code Signing: Manual (environment variables)
+```
 
-**Attempts Made:**
-1. ❌ Build with App Store distribution → Failed (app not in App Store Connect)
-2. ❌ Build with Development distribution → Failed (no matching profiles)
-3. ❌ Build with Ad Hoc distribution → Failed (no matching profiles)
+### Build Outputs
+- `.ipa` file - Installable iOS app
+- Build logs
+- `.app` bundle
+- `.dSYM` debug symbols
 
-**Root Cause:** Codemagic's automatic certificate/profile creation not working
-
----
-
-## 🔧 Next Steps When You Return
-
-### **FIRST: Check API Key Permission** ⚠️ CRITICAL
-
-1. Go to: https://appstoreconnect.apple.com/
-2. Click **"Users and Access"** → **"Keys"** tab
-3. Find: **"Codemagic Build Key"**
-4. Check the **"Role"** column
-
-**What to do based on role:**
-
-- ✅ **"Admin"** → Good! Go to Step 2
-- ⚠️ **"App Manager"** → Should work, try Step 2 first
-- ❌ **"Developer"** → Won't work! Must create new key with "Admin" role (see instructions below)
+### Environment Variables (Codemagic)
+Stored in environment group: `ios_signing`
+- `CM_CERTIFICATE` - Base64-encoded .p12 certificate
+- `CM_CERTIFICATE_PASSWORD` - Certificate password
+- `CM_PROVISIONING_PROFILE` - Base64-encoded .mobileprovision
 
 ---
 
-### **SECOND: Verify Apple Developer Setup**
+## 📝 Build History
 
-1. **Verify Bundle ID exists:**
-   - Go to: https://developer.apple.com/account/resources/identifiers/list
-   - Confirm `com.mycoachfinder.app` is in the list
-   - If not, create it:
-     - Click **"+"** → **"App IDs"** → **"App"**
-     - Description: `My Coach Finder`
-     - Bundle ID: Explicit → `com.mycoachfinder.app`
-     - Capabilities: ✅ Push Notifications
-     - Click **"Register"**
+| Build | Version | Changes | Status | Date |
+|-------|---------|---------|--------|------|
+| 12 | 1.1.12 | Version bump for icon cache refresh | ✅ Success | Oct 27 |
+| 11 | 1.0.11 | Added app icon & splash screen | ✅ Success | Oct 26 |
+| 10 | 1.0.10 | WKUserScript + hide status bar | ✅ Success | Oct 26 |
+| 9 | 1.0.9 | Page load re-injection attempt | ❌ Failed | Oct 26 |
+| 8 | 1.0.8 | Added error diagnostics with alerts | ❌ Failed | Oct 26 |
+| 7 | 1.0.7 | Enhanced click interception | ❌ Failed | Oct 26 |
+| 6 | 1.0.6 | Added allowNavigation + window.open | ✅ Success | Oct 26 |
+| 5 | 1.0.5 | Debug logging | ✅ Success | Oct 26 |
+| 4 | 1.0.4 | Version badge added | ✅ Success | Oct 26 |
 
-2. **Register iPhone for testing:**
-   - Get iPhone UDID:
-     ```bash
-     sudo apt-get install libimobiledevice-utils
-     idevice_id -l
-     ```
-     Or use: https://udid.tech/ (on iPhone in Safari)
-
-   - Register device:
-     - Go to: https://developer.apple.com/account/resources/devices/list
-     - Click **"+"**
-     - Platform: iOS
-     - Device Name: `My iPhone`
-     - UDID: Paste from above
-     - Click **"Register"**
+**Success Rate:** 6/9 builds successful (67%)
 
 ---
 
-### **THIRD: Retry Codemagic Build**
+## 🔧 Technical Implementation
 
-After verifying API key permissions + Bundle ID + Device:
+### Native Google Sign-In
+**File:** `ios/App/App/NativeAuthPlugin.swift`
 
+**Features:**
+- WKUserScript for automatic JavaScript injection
+- Click interception for `/auth/google/login` route
+- Native Google Sign-In iOS SDK integration
+- Backend JWT token exchange
+- Session persistence
+
+**Key Methods:**
+- `setupUserScript()` - Injects JavaScript on every page load
+- `signInWithGoogle()` - Triggers native Google Sign-In flow
+- `shouldOverrideLoad()` - Controls WebView navigation behavior
+
+### App Configuration
+**Bundle ID:** `com.mycoachfinder.app`
+**Display Name:** My Coach Finder
+**Minimum iOS:** 12.0
+**Target iOS:** Latest
+
+---
+
+## 🚀 How to Build
+
+### Via Codemagic (Recommended)
+
+**Option 1: Web Dashboard**
 1. Go to: https://codemagic.io/apps
-2. Open: `my-coach-finder-2-andruid-1`
+2. Open your app project
 3. Click **"Start new build"**
-4. Select:
-   - Workflow: `ios-development`
-   - Branch: `main`
-5. Click **"Start new build"**
+4. Select workflow: `ios-development`
+5. Select branch: `main`
+6. Click **"Start new build"**
+7. Wait ~15-20 minutes
+8. Download `.ipa` from build artifacts
 
-**Expected:** Build should succeed and produce `.ipa` file
+**Option 2: API Trigger**
+```bash
+curl -H "Content-Type: application/json" \
+     -H "x-auth-token: YOUR_API_TOKEN" \
+     --data '{
+       "appId": "68fd6f2a7e282f2bab8b9665",
+       "workflowId": "ios-development",
+       "branch": "main"
+     }' \
+     -X POST https://api.codemagic.io/builds
+```
 
----
+### Local Build (Requires Mac)
+```bash
+# Install dependencies
+npm install
+cd ios/App && pod install && cd ../..
 
-## 🔑 If API Key Role is "Developer" (Fix Required)
+# Sync Capacitor
+npx cap sync ios
 
-Your current API key won't work. Create a new one with Admin permissions:
+# Open in Xcode
+npx cap open ios
 
-### Create New Admin API Key
-
-1. Go to: https://appstoreconnect.apple.com/
-2. Navigate: **Users and Access** → **Keys** → **App Store Connect API**
-3. **Revoke old key** (optional, or just create new one)
-4. Click **"+"** to create new key
-5. Fill in:
-   - **Name:** `Codemagic Admin Key`
-   - **Access:** Select **"Admin"** (IMPORTANT!)
-6. Click **"Generate"**
-7. **Download the .p8 file** ⚠️ You can only download ONCE!
-8. Save the file: `AuthKey_XXXXX.p8`
-9. Copy:
-   - Key ID (shown on screen)
-   - Issuer ID (shown on screen)
-
-### Update Codemagic with New Key
-
-1. Go to: https://codemagic.io/
-2. Click profile → **"Teams"**
-3. Select your team → **"Integrations"**
-4. Find **"App Store Connect"** section
-5. **Delete** old key (if you want)
-6. Click **"Add key"**
-7. Fill in:
-   - Issuer ID: (from new key)
-   - Key ID: (from new key)
-   - Private key: Upload new `.p8` file
-8. Click **"Save"**
-
-Then retry the build!
+# Build (Cmd + B)
+```
 
 ---
 
-## 📱 After Build Succeeds - Install on iPhone
+## 📱 Installation Methods
 
-Once Codemagic successfully builds the `.ipa` file:
+### Method 1: Diawi (Easiest)
+1. Download `.ipa` from Codemagic
+2. Upload to: https://www.diawi.com/
+3. Get short link
+4. Open link on iPhone in Safari
+5. Tap "Install"
+6. Trust certificate: Settings → General → VPN & Device Management
+7. App installs!
 
-### Option 1: Diawi (Easiest, No Mac Needed)
+### Method 2: Direct Install (With Mac)
+```bash
+# Connect iPhone via USB
+# In Xcode: Window → Devices and Simulators
+# Drag .ipa to device
+```
 
-1. Download `.ipa` from Codemagic build artifacts
-2. Go to: https://www.diawi.com/
-3. Upload `.ipa` file
-4. Get short link (e.g., `https://i.diawi.com/ABC123`)
-5. Open link on iPhone in Safari
-6. Tap "Install"
-7. Settings → General → VPN & Device Management → Trust
-8. App installs! ✅
-
-### Option 2: TestFlight (More Professional)
-
-1. Register app in App Store Connect first
-2. Use `ios-production` workflow in Codemagic
-3. Codemagic auto-uploads to TestFlight
-4. Install TestFlight app on iPhone
-5. Open invitation → Install app
-
----
-
-## 📊 Project Status Summary
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| iOS Platform | ✅ Complete | All files created and pushed to GitHub |
-| Android App | ✅ Working | Native Google Sign-In functioning |
-| Google OAuth | ✅ Configured | Same client ID for iOS and Android |
-| Codemagic Setup | ⚠️ In Progress | Need to fix certificate/profile issue |
-| Bundle ID | ⚠️ Verify | Check if created in Apple Developer |
-| Device Registration | ⚠️ Verify | Check if iPhone UDID registered |
-| API Key Permissions | ⚠️ Check | Need to verify role is Admin/App Manager |
+### Method 3: TestFlight (Future)
+- Requires App Store Connect app registration
+- Use `ios-production` workflow
+- Automatic upload to TestFlight
+- Invite testers via email
 
 ---
 
-## 🔗 Important Links
+## 🐛 Known Issues
 
-- **Codemagic Dashboard:** https://codemagic.io/apps
-- **Apple Developer:** https://developer.apple.com/account/
-- **App Store Connect:** https://appstoreconnect.apple.com/
-- **GitHub Repo:** https://github.com/HannesFehre/my-coach-finder-2-andruid-1
+### 1. App Switcher Icon
+**Issue:** May show old Capacitor icon on some devices
+**Status:** ⏳ Testing fix in v1.1.12
+**Workaround:**
+- Clean install the app
+- Restart device
+- Version bump forces cache refresh
 
----
-
-## 🎯 Quick Start When You Return
-
-**TL;DR - Do these 3 things:**
-
-1. ✅ Check API key role (must be Admin or App Manager)
-2. ✅ Verify Bundle ID `com.mycoachfinder.app` exists
-3. ✅ Register iPhone UDID
-4. 🚀 Retry Codemagic build
-
-**If those 3 are correct, the build should work!**
+### 2. Native Google Sign-In
+**Issue:** Not yet confirmed working on device
+**Status:** ⏳ Pending final test
+**Implementation:** WKUserScript with click interception ready
 
 ---
 
-## 💡 Alternative If All Else Fails
+## ✅ Resolved Issues
 
-If Codemagic automatic signing continues to fail, there's one more option:
+### ✓ Safari Redirects (Fixed in v1.0.6)
+**Solution:** Added `allowNavigation` in capacitor.config.json
 
-**Use Codemagic's Manual Code Signing:**
-- Manually create certificate + profile in Apple Developer Portal
-- Download them
-- Upload to Codemagic manually
-- Build without automatic signing
+### ✓ JavaScript Not Injecting (Fixed in v1.0.10)
+**Solution:** Switched to WKUserScript for automatic injection
 
-(Instructions for this available if needed - ask Claude Code)
+### ✓ Status Bar Visible (Fixed in v1.0.10)
+**Solution:** Added `prefersStatusBarHidden = true`
+
+### ✓ No App Icon (Fixed in v1.0.11)
+**Solution:** Added 1024x1024 icon to Assets.xcassets
 
 ---
 
-**Good night! Resume from the "Next Steps" section when you return.** 😴
+## 📊 Build Metrics
+
+**Average Build Time:** ~15-20 minutes
+**Build Success Rate:** 67% (6/9 builds)
+**IPA Size:** ~15-20 MB (estimated)
+**Minimum iOS Version:** 12.0
+**Target Devices:** iPhone, iPad
+
+---
+
+## 🔗 Resources
+
+### Codemagic
+- **Dashboard:** https://codemagic.io/apps
+- **App ID:** `68fd6f2a7e282f2bab8b9665`
+- **Docs:** https://docs.codemagic.io/
+
+### Apple Developer
+- **Portal:** https://developer.apple.com/account/
+- **Team ID:** (configured in Xcode)
+- **Bundle ID:** `com.mycoachfinder.app`
+
+### GitHub
+- **Repository:** https://github.com/HannesFehre/my-coach-finder-2-ios-1
+- **Branch:** main
+
+---
+
+## 🎯 Next Steps
+
+### Immediate
+1. ⏳ Test v1.1.12 build on device
+2. ⏳ Verify app switcher icon displays correctly
+3. ⏳ Test native Google Sign-In flow
+
+### Short Term
+- [ ] Confirm all features working on device
+- [ ] Register app in App Store Connect
+- [ ] Set up TestFlight beta testing
+- [ ] Invite beta testers
+
+### Long Term
+- [ ] Submit to App Store for review
+- [ ] Public release on App Store
+- [ ] Add push notifications
+- [ ] Implement analytics
+
+---
+
+**Status:** Ready for device testing | **Next Build:** v1.1.13 (if needed)
