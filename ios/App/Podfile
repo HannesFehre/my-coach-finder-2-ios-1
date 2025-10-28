@@ -20,7 +20,7 @@ end
 target 'App' do
   capacitor_pods
   # Add your Pods here
-  pod 'GoogleSignIn', '~> 7.0'
+  # GoogleSignIn is managed by CodetrixStudioCapacitorGoogleAuth plugin
 end
 
 post_install do |installer|
