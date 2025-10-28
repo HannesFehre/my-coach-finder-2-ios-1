@@ -36,7 +36,7 @@ workflows:
       - name: Fetch signing files
         script: |
           # Automatically fetch certificates and provisioning profiles from App Store Connect
-          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" --type IOS_APP_ADHOC --create
+          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" --type IOS_APP_DEVELOPMENT --create
       - name: Add certificates to keychain
         script: |
           keychain add-certificates
