@@ -25,55 +25,21 @@ workflows:
           cd ios/App && pod install
       - name: Sync Capacitor assets to iOS
         script: |
-          # Copy web assets and config to iOS app
           npx cap sync ios
       - name: Set up keychain
         script: |
           keychain initialize
-      - name: Set up code signing
+      - name: Add certificates to keychain
         script: |
-          # Manual code signing - uses CM_CERTIFICATE and CM_PROVISIONING_PROFILE
-          echo "Setting up code signing..."
-
-          # Create directories
-          mkdir -p ~/Library/MobileDevice/Certificates
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-
-          # Save and decode certificate
-          echo "Decoding certificate..."
-          echo "$CM_CERTIFICATE" | base64 --decode > ~/Library/MobileDevice/Certificates/certificate.p12
-
-          # Add certificate to keychain
-          echo "Adding certificate to keychain..."
-          security import ~/Library/MobileDevice/Certificates/certificate.p12 \
-            -k ~/Library/Keychains/login.keychain-db \
-            -P "$CM_CERTIFICATE_PASSWORD" \
-            -T /usr/bin/codesign \
-            -T /usr/bin/security
-
-          # Set key partition list (allows codesign to access the key)
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" ~/Library/Keychains/login.keychain-db
-
-          # Decode and install provisioning profile
-          echo "Installing provisioning profile..."
-          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
-
-          # Get profile UUID
-          PROFILE_UUID=$(grep -a -A 1 "UUID" ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision | grep string | sed -e 's/<string>//' -e 's/<\/string>//' -e 's/^[ \t]*//')
-          echo "Profile UUID: $PROFILE_UUID"
-
-          # List installed profiles for debugging
-          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
-
-          # Apply provisioning profile to Xcode project
+          keychain add-certificates
+      - name: Set up code signing settings
+        script: |
           xcode-project use-profiles
       - name: Build iOS app
         script: |
-          # Build for generic iOS device
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME" \
-            --archive-flags="-destination 'generic/platform=iOS'"
+            --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
@@ -112,55 +78,21 @@ workflows:
           cd ios/App && pod install
       - name: Sync Capacitor assets to iOS
         script: |
-          # Copy web assets and config to iOS app
           npx cap sync ios
       - name: Set up keychain
         script: |
           keychain initialize
-      - name: Set up code signing
+      - name: Add certificates to keychain
         script: |
-          # Manual code signing - uses CM_CERTIFICATE and CM_PROVISIONING_PROFILE
-          echo "Setting up code signing..."
-
-          # Create directories
-          mkdir -p ~/Library/MobileDevice/Certificates
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-
-          # Save and decode certificate
-          echo "Decoding certificate..."
-          echo "$CM_CERTIFICATE" | base64 --decode > ~/Library/MobileDevice/Certificates/certificate.p12
-
-          # Add certificate to keychain
-          echo "Adding certificate to keychain..."
-          security import ~/Library/MobileDevice/Certificates/certificate.p12 \
-            -k ~/Library/Keychains/login.keychain-db \
-            -P "$CM_CERTIFICATE_PASSWORD" \
-            -T /usr/bin/codesign \
-            -T /usr/bin/security
-
-          # Set key partition list (allows codesign to access the key)
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" ~/Library/Keychains/login.keychain-db
-
-          # Decode and install provisioning profile
-          echo "Installing provisioning profile..."
-          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
-
-          # Get profile UUID
-          PROFILE_UUID=$(grep -a -A 1 "UUID" ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision | grep string | sed -e 's/<string>//' -e 's/<\/string>//' -e 's/^[ \t]*//')
-          echo "Profile UUID: $PROFILE_UUID"
-
-          # List installed profiles for debugging
-          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
-
-          # Apply provisioning profile to Xcode project
+          keychain add-certificates
+      - name: Set up code signing settings
+        script: |
           xcode-project use-profiles
       - name: Build iOS app
         script: |
-          # Build for generic iOS device to avoid provisioning profile device check
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME" \
-            --archive-flags="-destination 'generic/platform=iOS'"
+            --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
