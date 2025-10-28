@@ -38,17 +38,17 @@ workflows:
       
       - name: Set up code signing
         script: |
-          # Decode and save certificate
-          echo "$CM_CERTIFICATE" | base64 --decode > /tmp/certificate.p12
+          # Decode and save certificate (use printf to preserve full content!)
+          printf '%s' "$CM_CERTIFICATE" | base64 --decode > /tmp/certificate.p12
           
           # Decode and save provisioning profile
           PROFILE_PATH="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PROFILE_PATH"
-          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > "$PROFILE_PATH/profile.mobileprovision"
+          printf '%s' "$CM_PROVISIONING_PROFILE" | base64 --decode > "$PROFILE_PATH/profile.mobileprovision"
           
-          # Verify files
-          ls -lh /tmp/certificate.p12
-          ls -lh "$PROFILE_PATH/profile.mobileprovision"
+          # Verify decoded file sizes
+          echo "Certificate size: $(wc -c < /tmp/certificate.p12) bytes (should be ~3200)"
+          echo "Profile size: $(wc -c < "$PROFILE_PATH/profile.mobileprovision") bytes (should be ~12500)"
           
           # Import certificate to keychain
           security import /tmp/certificate.p12 \
