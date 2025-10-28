@@ -33,7 +33,21 @@ workflows:
       - name: Set up code signing
         script: |
           # Manual code signing - uses CM_CERTIFICATE and CM_PROVISIONING_PROFILE
+          echo "Setting up code signing..."
+
+          # Add certificates to keychain
           keychain add-certificates
+
+          # Manually decode and install provisioning profile
+          echo "Installing provisioning profile..."
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+
+          # Get profile UUID
+          PROFILE_UUID=$(grep -a -A 1 "UUID" ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision | grep string | sed -e 's/<string>//' -e 's/<\/string>//' -e 's/^[ \t]*//')
+          echo "Profile UUID: $PROFILE_UUID"
+
+          # Set provisioning profile in Xcode project
           xcode-project use-profiles
       - name: Build iOS app
         script: |
@@ -88,7 +102,21 @@ workflows:
       - name: Set up code signing
         script: |
           # Manual code signing - uses CM_CERTIFICATE and CM_PROVISIONING_PROFILE
+          echo "Setting up code signing..."
+
+          # Add certificates to keychain
           keychain add-certificates
+
+          # Manually decode and install provisioning profile
+          echo "Installing provisioning profile..."
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+
+          # Get profile UUID
+          PROFILE_UUID=$(grep -a -A 1 "UUID" ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision | grep string | sed -e 's/<string>//' -e 's/<\/string>//' -e 's/^[ \t]*//')
+          echo "Profile UUID: $PROFILE_UUID"
+
+          # Set provisioning profile in Xcode project
           xcode-project use-profiles
       - name: Build iOS app
         script: |
