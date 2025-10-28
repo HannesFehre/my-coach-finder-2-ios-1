@@ -7,7 +7,7 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       ios_signing:
-        distribution_type: ad_hoc
+        distribution_type: development
         bundle_identifier: com.mycoachfinder.app
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
