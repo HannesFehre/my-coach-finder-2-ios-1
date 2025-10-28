@@ -8,7 +8,10 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       groups:
-        - app_store_credentials  # Contains CM_CERTIFICATE, CM_CERTIFICATE_PASSWORD, CM_PROVISIONING_PROFILE, APP_STORE_CONNECT_*
+        - app_store_credentials
+      ios_signing:
+        distribution_type: development
+        bundle_identifier: MyCoachFinder
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
@@ -20,123 +23,61 @@ workflows:
       - name: Install npm dependencies
         script: |
           npm install
+      
       - name: Install CocoaPods dependencies
         script: |
           cd ios/App && pod install
+      
       - name: Sync Capacitor assets to iOS
         script: |
           npx cap sync ios
+      
       - name: Set up keychain
         script: |
           keychain initialize
+      
       - name: Set up code signing
         script: |
-          # Save certificate to expected location
-          mkdir -p $HOME/Library/MobileDevice/Certificates
-          echo "$CM_CERTIFICATE" | tr -d '\n' | base64 --decode > $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
-
-          # Verify certificate file was created
-          ls -lh $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
-
-          # Add certificates to keychain
-          keychain add-certificates
-
-          # Save provisioning profile to expected location
-          mkdir -p $HOME/Library/MobileDevice/Provisioning\ Profiles
-          echo "$CM_PROVISIONING_PROFILE" | tr -d '\n' | base64 --decode > $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
-
-          # Verify profile file was created
-          ls -lh $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
-
-          # Apply provisioning profiles to Xcode project
+          # Decode and save certificate
+          echo "$CM_CERTIFICATE" | base64 --decode > /tmp/certificate.p12
+          
+          # Decode and save provisioning profile
+          PROFILE_PATH="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILE_PATH"
+          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > "$PROFILE_PATH/profile.mobileprovision"
+          
+          # Verify files
+          ls -lh /tmp/certificate.p12
+          ls -lh "$PROFILE_PATH/profile.mobileprovision"
+          
+          # Import certificate to keychain
+          security import /tmp/certificate.p12 \
+            -k ~/Library/Keychains/codemagic.keychain-db \
+            -P "$CM_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign
+          
+          # Set partition list
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "" ~/Library/Keychains/codemagic.keychain-db
+          
+          # Apply code signing settings
           xcode-project use-profiles
+      
       - name: Build iOS app
         script: |
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME"
+    
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    
     publishing:
       email:
         recipients:
-          - your-email@example.com
-        notify:
-          success: true
-          failure: true
-
-  # Production build - for App Store submission
-  # REQUIRES app to be registered in App Store Connect first
-  ios-production:
-    name: iOS Production Build
-    max_build_duration: 120
-    instance_type: mac_mini_m1
-    environment:
-      groups:
-        - app_store_credentials  # Contains CM_CERTIFICATE, CM_CERTIFICATE_PASSWORD, CM_PROVISIONING_PROFILE, APP_STORE_CONNECT_*
-      vars:
-        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
-        XCODE_SCHEME: "App"
-        BUNDLE_IDENTIFIER: "MyCoachFinder"
-      node: 20.19.5
-      xcode: latest
-      cocoapods: default
-    scripts:
-      - name: Install npm dependencies
-        script: |
-          npm install
-      - name: Install CocoaPods dependencies
-        script: |
-          cd ios/App && pod install
-      - name: Sync Capacitor assets to iOS
-        script: |
-          npx cap sync ios
-      - name: Set up keychain
-        script: |
-          keychain initialize
-      - name: Set up code signing
-        script: |
-          # Save certificate to expected location
-          mkdir -p $HOME/Library/MobileDevice/Certificates
-          echo "$CM_CERTIFICATE" | tr -d '\n' | base64 --decode > $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
-
-          # Verify certificate file was created
-          ls -lh $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
-
-          # Add certificates to keychain
-          keychain add-certificates
-
-          # Save provisioning profile to expected location
-          mkdir -p $HOME/Library/MobileDevice/Provisioning\ Profiles
-          echo "$CM_PROVISIONING_PROFILE" | tr -d '\n' | base64 --decode > $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
-
-          # Verify profile file was created
-          ls -lh $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
-
-          # Apply provisioning profiles to Xcode project
-          xcode-project use-profiles
-      - name: Build iOS app
-        script: |
-          xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME"
-    artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
-    publishing:
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_testflight: true
-      email:
-        recipients:
-          - your-email@example.com
+          - hannes@example.com
         notify:
           success: true
           failure: true
