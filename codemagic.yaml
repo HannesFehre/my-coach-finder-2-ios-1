@@ -7,8 +7,6 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m1
     environment:
-      groups:
-        - app_store_credentials
       ios_signing:
         distribution_type: development
         bundle_identifier: MyCoachFinder
@@ -36,32 +34,12 @@ workflows:
         script: |
           keychain initialize
       
-      - name: Set up code signing
+      - name: Add certificates to keychain
         script: |
-          # Decode and save certificate (use printf to preserve full content!)
-          printf '%s' "$CM_CERTIFICATE" | base64 --decode > /tmp/certificate.p12
-          
-          # Decode and save provisioning profile
-          PROFILE_PATH="$HOME/Library/MobileDevice/Provisioning Profiles"
-          mkdir -p "$PROFILE_PATH"
-          printf '%s' "$CM_PROVISIONING_PROFILE" | base64 --decode > "$PROFILE_PATH/profile.mobileprovision"
-          
-          # Verify decoded file sizes
-          echo "Certificate size: $(wc -c < /tmp/certificate.p12) bytes (should be ~3200)"
-          echo "Profile size: $(wc -c < "$PROFILE_PATH/profile.mobileprovision") bytes (should be ~12500)"
-          
-          # Import certificate to keychain
-          security import /tmp/certificate.p12 \
-            -k ~/Library/Keychains/codemagic.keychain-db \
-            -P "$CM_CERTIFICATE_PASSWORD" \
-            -T /usr/bin/codesign
-          
-          # Set partition list
-          security set-key-partition-list \
-            -S apple-tool:,apple:,codesign: \
-            -s -k "" ~/Library/Keychains/codemagic.keychain-db
-          
-          # Apply code signing settings
+          keychain add-certificates
+      
+      - name: Set up code signing settings
+        script: |
           xcode-project use-profiles
       
       - name: Build iOS app
