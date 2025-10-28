@@ -1,21 +1,18 @@
 workflows:
   # Development build - for testing on your own devices
-  # Does NOT require app to be registered in App Store Connect
+  # Uses automatic code signing via App Store Connect API
   ios-development:
     name: iOS Development Build
     max_build_duration: 120
     instance_type: mac_mini_m1
     environment:
-      groups:
-        - ios_signing
+      ios_signing:
+        distribution_type: development
+        bundle_identifier: com.mycoachfinder.app
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
         BUNDLE_IDENTIFIER: "com.mycoachfinder.app"
-        # Certificate and provisioning profile (set as secure environment variables)
-        # CM_CERTIFICATE: base64-encoded .p12 certificate
-        # CM_CERTIFICATE_PASSWORD: password for .p12
-        # CM_PROVISIONING_PROFILE: base64-encoded .mobileprovision
       node: 20.19.5
       xcode: latest
       cocoapods: default
@@ -33,68 +30,19 @@ workflows:
       - name: Set up keychain
         script: |
           keychain initialize
-      - name: Set up signing certificate
+      - name: Fetch signing files
         script: |
-          # Verify environment variables are set
-          if [ -z "$CM_CERTIFICATE" ]; then
-            echo "Error: CM_CERTIFICATE is not set"
-            exit 1
-          fi
-          if [ -z "$CM_CERTIFICATE_PASSWORD" ]; then
-            echo "Error: CM_CERTIFICATE_PASSWORD is not set"
-            exit 1
-          fi
-          # Debug: Show password (first 3 chars only for security)
-          echo "Password starts with: ${CM_CERTIFICATE_PASSWORD:0:3}..."
-          echo "Password length: ${#CM_CERTIFICATE_PASSWORD}"
-
-          # Decode and save certificate from environment variable (use printf to avoid echo issues)
-          # macOS uses -D flag instead of --decode
-          printf '%s' "$CM_CERTIFICATE" | base64 -D > /tmp/certificate.p12
-
-          # Verify the .p12 file was created
-          if [ ! -f /tmp/certificate.p12 ]; then
-            echo "Error: Failed to decode certificate"
-            exit 1
-          fi
-
-          # Debug: Show file size
-          echo "Certificate file size: $(wc -c < /tmp/certificate.p12) bytes"
-          echo "Expected size: 3242 bytes"
-
-          # Try to verify the certificate with openssl first
-          echo "Testing certificate with openssl..."
-          openssl pkcs12 -info -in /tmp/certificate.p12 -password pass:"$CM_CERTIFICATE_PASSWORD" -noout 2>&1 | head -3 || echo "OpenSSL verification failed"
-
-          # Import certificate to keychain
-          keychain add-certificates --certificate /tmp/certificate.p12 --certificate-password "$CM_CERTIFICATE_PASSWORD"
-      - name: Set up provisioning profile
+          # Automatically fetch certificates and provisioning profiles from App Store Connect
+          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" --type IOS_APP_DEVELOPMENT --create
+      - name: Add certificates to keychain
         script: |
-          # Verify environment variable is set
-          if [ -z "$CM_PROVISIONING_PROFILE" ]; then
-            echo "Error: CM_PROVISIONING_PROFILE is not set"
-            exit 1
-          fi
-          # Decode and save provisioning profile from environment variable (use printf to avoid echo issues)
-          # macOS uses -D flag instead of --decode
-          printf '%s' "$CM_PROVISIONING_PROFILE" | base64 -D > /tmp/profile.mobileprovision
-          # Verify the profile was created
-          if [ ! -f /tmp/profile.mobileprovision ]; then
-            echo "Error: Failed to decode provisioning profile"
-            exit 1
-          fi
-          # Get UUID from profile
-          PROFILE_UUID=$(grep UUID -A1 -a /tmp/profile.mobileprovision | grep -io "[-A-F0-9]\{36\}")
-          echo "Provisioning profile UUID: $PROFILE_UUID"
-          # Copy to the right location
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$PROFILE_UUID.mobileprovision
+          keychain add-certificates
       - name: Set up code signing settings
         script: |
           xcode-project use-profiles
       - name: Build iOS app
         script: |
-          # Build for generic iOS device to avoid provisioning profile device check
+          # Build for generic iOS device
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME" \
