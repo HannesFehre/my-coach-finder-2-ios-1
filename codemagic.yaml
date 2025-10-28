@@ -33,14 +33,20 @@ workflows:
         script: |
           # Save certificate to expected location
           mkdir -p $HOME/Library/MobileDevice/Certificates
-          echo "$CM_CERTIFICATE" | base64 --decode > $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
+          echo "$CM_CERTIFICATE" | tr -d '\n' | base64 --decode > $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
+
+          # Verify certificate file was created
+          ls -lh $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
 
           # Add certificates to keychain
           keychain add-certificates
 
           # Save provisioning profile to expected location
           mkdir -p $HOME/Library/MobileDevice/Provisioning\ Profiles
-          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
+          echo "$CM_PROVISIONING_PROFILE" | tr -d '\n' | base64 --decode > $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
+
+          # Verify profile file was created
+          ls -lh $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
 
           # Apply provisioning profiles to Xcode project
           xcode-project use-profiles
@@ -95,14 +101,20 @@ workflows:
         script: |
           # Save certificate to expected location
           mkdir -p $HOME/Library/MobileDevice/Certificates
-          echo "$CM_CERTIFICATE" | base64 --decode > $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
+          echo "$CM_CERTIFICATE" | tr -d '\n' | base64 --decode > $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
+
+          # Verify certificate file was created
+          ls -lh $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
 
           # Add certificates to keychain
           keychain add-certificates
 
           # Save provisioning profile to expected location
           mkdir -p $HOME/Library/MobileDevice/Provisioning\ Profiles
-          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
+          echo "$CM_PROVISIONING_PROFILE" | tr -d '\n' | base64 --decode > $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
+
+          # Verify profile file was created
+          ls -lh $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
 
           # Apply provisioning profiles to Xcode project
           xcode-project use-profiles
