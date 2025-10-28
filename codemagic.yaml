@@ -1,3 +1,6 @@
+integrations:
+  app_store_connect: codemagic_api_key
+
 workflows:
   # Development build - for testing on your own devices
   # Uses automatic code signing via App Store Connect API
