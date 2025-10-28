@@ -29,11 +29,20 @@ workflows:
       - name: Set up keychain
         script: |
           keychain initialize
-      - name: Add certificates to keychain
+      - name: Set up code signing
         script: |
+          # Save certificate to expected location
+          mkdir -p $HOME/Library/MobileDevice/Certificates
+          echo "$CM_CERTIFICATE" | base64 --decode > $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
+
+          # Add certificates to keychain
           keychain add-certificates
-      - name: Set up code signing settings
-        script: |
+
+          # Save provisioning profile to expected location
+          mkdir -p $HOME/Library/MobileDevice/Provisioning\ Profiles
+          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
+
+          # Apply provisioning profiles to Xcode project
           xcode-project use-profiles
       - name: Build iOS app
         script: |
@@ -82,11 +91,20 @@ workflows:
       - name: Set up keychain
         script: |
           keychain initialize
-      - name: Add certificates to keychain
+      - name: Set up code signing
         script: |
+          # Save certificate to expected location
+          mkdir -p $HOME/Library/MobileDevice/Certificates
+          echo "$CM_CERTIFICATE" | base64 --decode > $HOME/Library/MobileDevice/Certificates/distribution_certificate.p12
+
+          # Add certificates to keychain
           keychain add-certificates
-      - name: Set up code signing settings
-        script: |
+
+          # Save provisioning profile to expected location
+          mkdir -p $HOME/Library/MobileDevice/Provisioning\ Profiles
+          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > $HOME/Library/MobileDevice/Provisioning\ Profiles/distribution_profile.mobileprovision
+
+          # Apply provisioning profiles to Xcode project
           xcode-project use-profiles
       - name: Build iOS app
         script: |
