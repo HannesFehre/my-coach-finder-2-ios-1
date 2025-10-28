@@ -57,6 +57,22 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        .test-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            padding: 15px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10000;
+        }
     </style>
 </head>
 <body>
@@ -65,10 +81,19 @@
         <div class="spinner"></div>
     </div>
 
+    <!-- TEST BUTTON: Remove this after web app is updated -->
+    <button class="test-btn" onclick="window.location.href='/test-google-auth.html'">
+        🧪 Test Google Auth Plugin
+    </button>
+
     <script>
-        // This page redirects to the web app
-        // Push notifications are handled by MainActivity.java
-        window.location.href = 'https://app.my-coach-finder.com/go';
+        // PRODUCTION: Redirects to the web app
+        // TESTING: Click "Test Google Auth Plugin" button to test locally
+
+        // Redirect after 2 seconds (gives time to click test button)
+        setTimeout(() => {
+            window.location.href = 'https://app.my-coach-finder.com/go';
+        }, 2000);
     </script>
 </body>
 </html>
