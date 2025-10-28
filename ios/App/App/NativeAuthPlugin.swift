@@ -18,7 +18,8 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
         NSLog("[NativeAuth] ✅ Plugin loaded successfully")
 
         // Inject JavaScript using WKUserScript to run on EVERY page load
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        // Do this immediately, no delay
+        DispatchQueue.main.async {
             NSLog("[NativeAuth] Setting up WKUserScript for automatic injection...")
             self.setupUserScript()
         }
@@ -36,17 +37,32 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
 
         let scriptSource = """
         (function(){
-            if(!window.Capacitor)return;
+            if(!window.Capacitor){
+                console.error('[iOS] Capacitor not found!');
+                return;
+            }
             console.log('[Native Bridge iOS] Auto-injecting on page load');
             console.log('[iOS App Version] \(version) (Build \(build))');
+            console.log('[iOS] Capacitor Plugins available:', Object.keys(window.Capacitor.Plugins||{}));
 
             // Add visible version overlay
-            if(!document.getElementById('ios-version-badge')){
-                const versionDiv = document.createElement('div');
-                versionDiv.id = 'ios-version-badge';
-                versionDiv.textContent = 'iOS v\(version).\(build)';
-                versionDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.7);color:#fff;padding:5px 10px;border-radius:5px;font-size:12px;font-family:monospace;z-index:999999;';
-                document.body.appendChild(versionDiv);
+            function addVersionBadge(){
+                if(!document.getElementById('ios-version-badge')){
+                    const versionDiv = document.createElement('div');
+                    versionDiv.id = 'ios-version-badge';
+                    versionDiv.textContent = 'iOS v\(version).\(build) [NativeAuth Ready]';
+                    versionDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.7);color:#fff;padding:5px 10px;border-radius:5px;font-size:12px;font-family:monospace;z-index:999999;';
+                    if(document.body){
+                        document.body.appendChild(versionDiv);
+                    }else{
+                        setTimeout(addVersionBadge, 100);
+                    }
+                }
+            }
+            if(document.readyState === 'loading'){
+                document.addEventListener('DOMContentLoaded', addVersionBadge);
+            }else{
+                addVersionBadge();
             }
 
             // Override window.open to keep navigation in WebView
@@ -62,108 +78,175 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                 window._openOverridden = true;
             }
 
-            // Click listener for Google OAuth links - CAPTURE PHASE
-            if(!window._clickListenerAdded){
-                document.addEventListener('click',function(e){
-                    let el=e.target;
-                    console.log('[iOS] Click detected on:', el.tagName, el.className);
+            // Google Sign-In Handler Function
+            window._handleGoogleSignIn = async function(returnUrl) {
+                console.log('[iOS] 🚀 _handleGoogleSignIn called with returnUrl:', returnUrl);
 
-                    // Traverse up to 10 parent elements to find the link
-                    for(let i=0;i<10&&el;i++){
-                        // Check both href attribute and onclick handlers
-                        const href=el.getAttribute&&el.getAttribute('href');
+                // Check plugin availability
+                if(!window.Capacitor?.Plugins?.NativeAuth){
+                    console.error('[iOS] ❌ NativeAuth plugin not found!');
+                    alert('Error: NativeAuth plugin not loaded. Available: ' + Object.keys(window.Capacitor?.Plugins||{}).join(', '));
+                    return;
+                }
+
+                console.log('[iOS] ✅ Calling native Google Sign-In...');
+
+                try{
+                    const result = await window.Capacitor.Plugins.NativeAuth.signInWithGoogle();
+                    console.log('[iOS] Sign-in result:', JSON.stringify(result));
+
+                    if(result?.idToken){
+                        const backendUrl = 'https://app.my-coach-finder.com/auth/google/native?id_token='+encodeURIComponent(result.idToken);
+                        console.log('[iOS] Sending token to backend...');
+
+                        const response = await fetch(backendUrl,{
+                            method:'POST',
+                            headers:{'Content-Type':'application/json'}
+                        });
+
+                        if(response.ok){
+                            const data = await response.json();
+                            console.log('[iOS] ✅ Backend authentication successful');
+                            localStorage.setItem('token',data.access_token||data.token);
+                            localStorage.setItem('user',JSON.stringify(data.user||{}));
+
+                            const redirectUrl = returnUrl
+                                ? 'https://app.my-coach-finder.com' + returnUrl
+                                : 'https://app.my-coach-finder.com/';
+                            console.log('[iOS] Redirecting to:', redirectUrl);
+                            window.location.href = redirectUrl;
+                        }else{
+                            const errorText = await response.text();
+                            console.error('[iOS] Backend error:', response.status, errorText);
+                            alert('Authentication failed: ' + response.status);
+                        }
+                    }else{
+                        console.error('[iOS] No ID token received');
+                        alert('No ID token received from Google');
+                    }
+                }catch(err){
+                    console.error('[iOS] Sign-in error:', err);
+                    alert('Sign-in error: ' + err.message);
+                }
+            };
+
+            // STRATEGY 1: Intercept ALL clicks in CAPTURE phase
+            if(!window._clickListenerAdded){
+                console.log('[iOS] Adding click interceptor (CAPTURE phase)...');
+
+                document.addEventListener('click',function(e){
+                    console.log('[iOS] 🔍 Click detected:', {
+                        tag: e.target.tagName,
+                        className: e.target.className,
+                        id: e.target.id
+                    });
+
+                    let el = e.target;
+
+                    // Traverse up to 10 parent elements
+                    for(let i=0; i<10 && el; i++){
+                        const href = el.getAttribute && el.getAttribute('href');
+                        const className = el.className || '';
+
+                        // Check if it's a Google OAuth link
                         const isGoogleAuth = href && (
                             href.includes('/auth/google/login') ||
                             href.includes('auth/google/login')
                         );
 
-                        if(isGoogleAuth){
-                            console.log('[iOS] ✅ Intercepted Google OAuth link:', href);
+                        // ALSO check for oauth-btn class
+                        const isOAuthBtn = className.includes && className.includes('oauth-btn');
 
-                            // CRITICAL: Stop all event propagation immediately
+                        if(isGoogleAuth || isOAuthBtn){
+                            console.log('[iOS] ✅✅✅ INTERCEPTED Google OAuth:', {
+                                href: href,
+                                className: className,
+                                method: isGoogleAuth ? 'href' : 'class'
+                            });
+
+                            // CRITICAL: Stop ALL propagation IMMEDIATELY
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
 
-                            // Extract return_url from href if present
+                            // Extract return_url
                             let returnUrl = null;
-                            try{
-                                const url = new URL(href, window.location.origin);
-                                returnUrl = url.searchParams.get('return_url');
-                                console.log('[iOS] Return URL:', returnUrl);
-                            }catch(err){
-                                console.log('[iOS] Could not parse return_url:', err.message);
-                            }
-
-                            // Check plugin availability
-                            if(!window.Capacitor?.Plugins?.NativeAuth){
-                                console.error('[iOS] ❌ NativeAuth plugin not found!');
-                                alert('Error: NativeAuth plugin not loaded. Plugins: ' + Object.keys(window.Capacitor?.Plugins||{}).join(', '));
-                                return false;
-                            }
-
-                            console.log('[iOS] ✅ Calling native Google Sign-In...');
-
-                            // Call native Google Sign-In
-                            (async function(){
+                            if(href){
                                 try{
-                                    const result=await window.Capacitor.Plugins.NativeAuth.signInWithGoogle();
-                                    console.log('[iOS] Sign-in result:', JSON.stringify(result));
-
-                                    if(result?.idToken){
-                                        // Send ID token to backend
-                                        const backendUrl = 'https://app.my-coach-finder.com/auth/google/native?id_token='+encodeURIComponent(result.idToken);
-                                        console.log('[iOS] Sending token to backend...');
-
-                                        const response=await fetch(backendUrl,{
-                                            method:'POST',
-                                            headers:{'Content-Type':'application/json'}
-                                        });
-
-                                        if(response.ok){
-                                            const data=await response.json();
-                                            console.log('[iOS] ✅ Backend authentication successful');
-
-                                            // Store authentication data
-                                            localStorage.setItem('token',data.access_token||data.token);
-                                            localStorage.setItem('user',JSON.stringify(data.user||{}));
-
-                                            // Redirect to return_url or default
-                                            const redirectUrl = returnUrl
-                                                ? 'https://app.my-coach-finder.com' + returnUrl
-                                                : 'https://app.my-coach-finder.com/';
-                                            console.log('[iOS] Redirecting to:', redirectUrl);
-                                            window.location.href = redirectUrl;
-                                        }else{
-                                            const errorText = await response.text();
-                                            console.error('[iOS] Backend error:', response.status, errorText);
-                                            alert('Authentication failed: ' + response.status);
-                                        }
-                                    }else{
-                                        console.error('[iOS] No ID token received');
-                                        alert('No ID token received from Google');
-                                    }
+                                    const url = new URL(href, window.location.origin);
+                                    returnUrl = url.searchParams.get('return_url');
+                                    console.log('[iOS] Return URL extracted:', returnUrl);
                                 }catch(err){
-                                    console.error('[iOS] Sign-in error:', err.message);
-                                    alert('Sign-in error: ' + err.message);
+                                    console.log('[iOS] Could not parse return_url:', err.message);
                                 }
-                            })();
+                            }
 
+                            // Call handler
+                            window._handleGoogleSignIn(returnUrl);
                             return false;
                         }
-                        el=el.parentElement;
+                        el = el.parentElement;
                     }
-                },true);
+                },true); // CAPTURE = true
+
                 window._clickListenerAdded = true;
-                console.log('[iOS] ✅ Click listener added (enhanced for OAuth buttons)');
+                console.log('[iOS] ✅ Click listener added (CAPTURE phase)');
+            }
+
+            // STRATEGY 2: Also add listener on BUBBLE phase as backup
+            if(!window._bubbleListenerAdded){
+                console.log('[iOS] Adding backup click interceptor (BUBBLE phase)...');
+
+                document.addEventListener('click',function(e){
+                    let el = e.target;
+                    for(let i=0; i<10 && el; i++){
+                        const href = el.getAttribute && el.getAttribute('href');
+                        const className = el.className || '';
+
+                        if((href && (href.includes('/auth/google/login') || href.includes('auth/google/login'))) ||
+                           (className.includes && className.includes('oauth-btn'))){
+                            console.log('[iOS] 🔄 BUBBLE phase intercepted (capture missed it)');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+
+                            let returnUrl = null;
+                            if(href){
+                                try{
+                                    const url = new URL(href, window.location.origin);
+                                    returnUrl = url.searchParams.get('return_url');
+                                }catch(err){}
+                            }
+
+                            window._handleGoogleSignIn(returnUrl);
+                            return false;
+                        }
+                        el = el.parentElement;
+                    }
+                },false); // BUBBLE = false
+
+                window._bubbleListenerAdded = true;
+                console.log('[iOS] ✅ Backup listener added (BUBBLE phase)');
             }
         })();
         """
 
-        let userScript = WKUserScript(source: scriptSource, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-        webView.configuration.userContentController.addUserScript(userScript)
+        // Clear any existing scripts first to avoid duplicates
+        webView.configuration.userContentController.removeAllUserScripts()
 
-        NSLog("[NativeAuth] ✅ WKUserScript added - will run on every page load")
+        // Add at document END for main functionality
+        let endScript = WKUserScript(source: scriptSource, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
+        webView.configuration.userContentController.addUserScript(endScript)
+
+        // Also add a simpler version at document START for early interception
+        let startScriptSource = """
+        console.log('[iOS] Early script loaded at document start');
+        window._nativeAuthEarlyLoad = true;
+        """
+        let startScript = WKUserScript(source: startScriptSource, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        webView.configuration.userContentController.addUserScript(startScript)
+
+        NSLog("[NativeAuth] ✅ WKUserScripts added (start + end) - will run on every page load")
     }
 
     // MARK: - Capacitor Navigation Override
