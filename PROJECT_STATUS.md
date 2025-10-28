@@ -223,7 +223,7 @@ All sensitive credentials stored in Codemagic environment variable group `ios_si
 
 ### Apple Developer
 - Team ID: (set in Xcode)
-- Bundle ID: `com.mycoachfinder.app`
+- Bundle ID: `MyCoachFinder`
 - Provisioning: Manual (Development)
 
 ### Google OAuth

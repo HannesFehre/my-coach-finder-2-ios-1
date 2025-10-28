@@ -8,11 +8,11 @@ workflows:
     environment:
       ios_signing:
         distribution_type: development
-        bundle_identifier: com.mycoachfinder.app
+        bundle_identifier: MyCoachFinder
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        BUNDLE_IDENTIFIER: "com.mycoachfinder.app"
+        BUNDLE_IDENTIFIER: "MyCoachFinder"
       node: 20.19.5
       xcode: latest
       cocoapods: default
@@ -69,11 +69,11 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.mycoachfinder.app
+        bundle_identifier: MyCoachFinder
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        BUNDLE_IDENTIFIER: "com.mycoachfinder.app"
+        BUNDLE_IDENTIFIER: "MyCoachFinder"
       node: 20.19.5
       xcode: latest
       cocoapods: default

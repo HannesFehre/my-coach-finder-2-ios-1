@@ -131,7 +131,7 @@ appel/
 
 **OAuth Client:**
 - Client ID: `353309305721-ir55d3eiiucm5fda67gsn9gscd8eq146.apps.googleusercontent.com`
-- Bundle ID: `com.mycoachfinder.app`
+- Bundle ID: `MyCoachFinder`
 - URL Scheme: `com.googleusercontent.apps.353309305721-ir55d3eiiucm5fda67gsn9gscd8eq146`
 
 ### Click Detection Logic
@@ -141,7 +141,7 @@ Intercepts links/buttons for `/auth/google/login` route and triggers native sign
 ## Configuration
 
 ### App Identity
-- **Bundle ID:** `com.mycoachfinder.app`
+- **Bundle ID:** `MyCoachFinder`
 - **App Name:** My Coach Finder
 - **Version:** 1.1.12 (Build 12)
 - **Min iOS:** 12.0

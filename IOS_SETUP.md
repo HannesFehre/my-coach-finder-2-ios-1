@@ -72,7 +72,7 @@ Create environment variable group named `ios_signing` with:
 1. Go to: https://developer.apple.com/account/resources/identifiers/list
 2. Click **"+"** → **"App IDs"** → **"App"**
 3. Description: `My Coach Finder`
-4. Bundle ID: `com.mycoachfinder.app` (Explicit)
+4. Bundle ID: `MyCoachFinder` (Explicit)
 5. Capabilities:
    - ✅ Associated Domains
    - ✅ Push Notifications
@@ -104,7 +104,7 @@ Create environment variable group named `ios_signing` with:
 5. Create provisioning profile:
    - Go to: https://developer.apple.com/account/resources/profiles/list
    - Click **"+"** → **"Ad Hoc"**
-   - Select App ID: `com.mycoachfinder.app`
+   - Select App ID: `MyCoachFinder`
    - Select certificate (created above)
    - Select devices (registered above)
    - Profile name: `My Coach Finder Development`
@@ -224,7 +224,7 @@ my-coach-finder-2-ios-1/
 ### capacitor.config.json
 ```json
 {
-  "appId": "com.mycoachfinder.app",
+  "appId": "MyCoachFinder",
   "appName": "My Coach Finder",
   "webDir": "www",
   "server": {
@@ -242,7 +242,7 @@ my-coach-finder-2-ios-1/
 ```
 
 ### Info.plist (Key Settings)
-- **Bundle ID:** `com.mycoachfinder.app`
+- **Bundle ID:** `MyCoachFinder`
 - **Display Name:** My Coach Finder
 - **Version:** 1.1.12
 - **Build Number:** 12
@@ -268,7 +268,7 @@ my-coach-finder-2-ios-1/
 
 ### Google Sign-In
 - **Client ID:** `353309305721-ir55d3eiiucm5fda67gsn9gscd8eq146.apps.googleusercontent.com`
-- **Bundle ID:** `com.mycoachfinder.app`
+- **Bundle ID:** `MyCoachFinder`
 - **URL Scheme:** `com.googleusercontent.apps.353309305721-ir55d3eiiucm5fda67gsn9gscd8eq146`
 
 ### Backend Integration

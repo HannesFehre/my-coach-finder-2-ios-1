@@ -85,7 +85,7 @@ Stored in environment group: `ios_signing`
 - `shouldOverrideLoad()` - Controls WebView navigation behavior
 
 ### App Configuration
-**Bundle ID:** `com.mycoachfinder.app`
+**Bundle ID:** `MyCoachFinder`
 **Display Name:** My Coach Finder
 **Minimum iOS:** 12.0
 **Target iOS:** Latest
@@ -214,7 +214,7 @@ npx cap open ios
 ### Apple Developer
 - **Portal:** https://developer.apple.com/account/
 - **Team ID:** (configured in Xcode)
-- **Bundle ID:** `com.mycoachfinder.app`
+- **Bundle ID:** `MyCoachFinder`
 
 ### GitHub
 - **Repository:** https://github.com/HannesFehre/my-coach-finder-2-ios-1
