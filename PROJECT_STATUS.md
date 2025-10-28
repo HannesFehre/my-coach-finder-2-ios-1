@@ -1,8 +1,9 @@
 # My Coach Finder - iOS App Project Status
 
-**Last Updated:** October 27, 2025
+**Last Updated:** October 28, 2025
 **Current Version:** iOS v1.1.12 (Build 12)
-**Status:** ✅ iOS Building Successfully | ⏳ Google OAuth Testing Pending
+**Status:** ✅ iOS Building Successfully on Codemagic
+**Bundle ID:** MyCoachFinder (Updated to match App Store app)
 
 ---
 
@@ -10,11 +11,13 @@
 
 ### iOS
 - ✅ **BUILDS SUCCESSFULLY** on Codemagic
+- ✅ Bundle ID updated to MyCoachFinder (matches App Store)
+- ✅ Manual code signing configured and working
 - ✅ App icon and splash screen added
 - ✅ Status bar hidden
 - ✅ WebView navigation working (no Safari redirects)
 - ⏳ Google OAuth native sign-in pending final test
-- Latest Build: **v1.1.12 (Build 12)** - [Codemagic](https://codemagic.io/app/68fd6f2a7e282f2bab8b9665)
+- Latest Successful Build: **October 28, 2025** - v1.1.12 (Build 12)
 
 ---
 

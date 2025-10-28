@@ -1,8 +1,9 @@
 # iOS Build Status
 
-**Last Updated:** October 27, 2025
+**Last Updated:** October 28, 2025
 **Current Version:** v1.1.12 (Build 12)
 **Status:** ✅ Building Successfully on Codemagic
+**Latest Successful Build:** October 28, 2025
 
 ---
 
@@ -12,8 +13,9 @@
 - ✅ **Builds Successfully** on Codemagic CI/CD
 - ✅ **Version:** 1.1.12 (Build 12)
 - ✅ **Platform:** iOS 12.0+
-- ✅ **Distribution:** Development (Ad Hoc)
+- ✅ **Distribution:** Development
 - ✅ **Code Signing:** Manual signing with provisioning profile
+- ✅ **Bundle ID:** MyCoachFinder (matches existing App Store app)
 
 ### App Features
 - ✅ **App Icon** - 1024x1024 custom My Coach Finder icon
@@ -42,10 +44,13 @@ Code Signing: Manual (environment variables)
 - `.dSYM` debug symbols
 
 ### Environment Variables (Codemagic)
-Stored in environment group: `ios_signing`
-- `CM_CERTIFICATE` - Base64-encoded .p12 certificate
+Stored in environment group: `app_store_credentials`
+- `CM_CERTIFICATE` - Base64-encoded .p12 certificate (4,373 chars)
 - `CM_CERTIFICATE_PASSWORD` - Certificate password
-- `CM_PROVISIONING_PROFILE` - Base64-encoded .mobileprovision
+- `CM_PROVISIONING_PROFILE` - Base64-encoded .mobileprovision (16,872 chars)
+- `APP_STORE_CONNECT_PRIVATE_KEY` - App Store Connect API key
+- `APP_STORE_CONNECT_KEY_IDENTIFIER` - API Key ID
+- `APP_STORE_CONNECT_ISSUER_ID` - Issuer ID
 
 ---
 
