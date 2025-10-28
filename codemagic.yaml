@@ -2,16 +2,13 @@ integrations:
   app_store_connect: codemagic_api_key
 
 workflows:
-  # Development build - for testing on your own devices
-  # Uses automatic code signing via App Store Connect API
   ios-development:
-    name: iOS Development Build
+    name: iOS Development Build (Manual Signing)
     max_build_duration: 120
     instance_type: mac_mini_m1
     environment:
-      ios_signing:
-        distribution_type: development
-        bundle_identifier: MyCoachFinder
+      groups:
+        - ios_signing  # Contains CM_CERTIFICATE, CM_CERTIFICATE_PASSWORD, CM_PROVISIONING_PROFILE
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
@@ -33,15 +30,10 @@ workflows:
       - name: Set up keychain
         script: |
           keychain initialize
-      - name: Fetch signing files
+      - name: Set up code signing (Manual)
         script: |
-          # Automatically fetch certificates and provisioning profiles from App Store Connect
-          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" --type IOS_APP_DEVELOPMENT --create
-      - name: Add certificates to keychain
-        script: |
+          # Manual code signing - uses CM_CERTIFICATE and CM_PROVISIONING_PROFILE from environment
           keychain add-certificates
-      - name: Set up code signing settings
-        script: |
           xcode-project use-profiles
       - name: Build iOS app
         script: |
@@ -66,13 +58,13 @@ workflows:
   # Production build - for App Store submission
   # REQUIRES app to be registered in App Store Connect first
   ios-production:
-    name: iOS Production Build
+    name: iOS Production Build (Manual Signing)
     max_build_duration: 120
     instance_type: mac_mini_m1
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: MyCoachFinder
+      groups:
+        - ios_signing  # Contains CM_CERTIFICATE, CM_CERTIFICATE_PASSWORD, CM_PROVISIONING_PROFILE
+        - app_store_credentials  # Contains APP_STORE_CONNECT_PRIVATE_KEY, KEY_IDENTIFIER, ISSUER_ID
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
@@ -94,14 +86,10 @@ workflows:
       - name: Set up keychain
         script: |
           keychain initialize
-      - name: Fetch signing files
+      - name: Set up code signing (Manual)
         script: |
-          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" --type IOS_APP_STORE --create
-      - name: Add certificates to keychain
-        script: |
+          # Manual code signing - uses CM_CERTIFICATE and CM_PROVISIONING_PROFILE from environment
           keychain add-certificates
-      - name: Set up code signing settings
-        script: |
           xcode-project use-profiles
       - name: Build iOS app
         script: |
