@@ -68,63 +68,94 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                     let el=e.target;
                     console.log('[iOS] Click detected on:', el.tagName, el.className);
 
-                    for(let i=0;i<5&&el;i++){
-                        const href=el.getAttribute('href');
-                        if(href){
-                            console.log('[iOS] Found href:', href);
+                    // Traverse up to 10 parent elements to find the link
+                    for(let i=0;i<10&&el;i++){
+                        // Check both href attribute and onclick handlers
+                        const href=el.getAttribute&&el.getAttribute('href');
+                        const isGoogleAuth = href && (
+                            href.includes('/auth/google/login') ||
+                            href.includes('auth/google/login')
+                        );
 
-                            if(href.includes('/auth/google/login')){
-                                console.log('[iOS] ✅ Intercepted Google OAuth link');
-                                e.preventDefault();
-                                e.stopPropagation();
-                                e.stopImmediatePropagation();
+                        if(isGoogleAuth){
+                            console.log('[iOS] ✅ Intercepted Google OAuth link:', href);
 
-                                // Check plugin availability
-                                if(!window.Capacitor?.Plugins?.NativeAuth){
-                                    console.error('[iOS] ❌ NativeAuth plugin not found!');
-                                    alert('Error: NativeAuth plugin not loaded. Plugins: ' + Object.keys(window.Capacitor?.Plugins||{}).join(', '));
-                                    return false;
-                                }
+                            // CRITICAL: Stop all event propagation immediately
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
 
-                                console.log('[iOS] ✅ Calling native sign-in...');
+                            // Extract return_url from href if present
+                            let returnUrl = null;
+                            try{
+                                const url = new URL(href, window.location.origin);
+                                returnUrl = url.searchParams.get('return_url');
+                                console.log('[iOS] Return URL:', returnUrl);
+                            }catch(err){
+                                console.log('[iOS] Could not parse return_url:', err.message);
+                            }
 
-                                // Call native Google Sign-In
-                                (async function(){
-                                    try{
-                                        const result=await window.Capacitor.Plugins.NativeAuth.signInWithGoogle();
-                                        console.log('[iOS] Sign-in result:', JSON.stringify(result));
-
-                                        if(result?.idToken){
-                                            const response=await fetch('https://app.my-coach-finder.com/auth/google/native?id_token='+encodeURIComponent(result.idToken),{
-                                                method:'POST',
-                                                headers:{'Content-Type':'application/json'}
-                                            });
-
-                                            if(response.ok){
-                                                const data=await response.json();
-                                                localStorage.setItem('token',data.access_token||data.token);
-                                                localStorage.setItem('user',JSON.stringify(data.user||{}));
-                                                window.location.href='https://app.my-coach-finder.com/';
-                                            }else{
-                                                alert('Backend error: ' + response.status);
-                                            }
-                                        }else{
-                                            alert('No ID token received');
-                                        }
-                                    }catch(err){
-                                        console.error('[iOS] Error:', err.message);
-                                        alert('Sign-in error: ' + err.message);
-                                    }
-                                })();
-
+                            // Check plugin availability
+                            if(!window.Capacitor?.Plugins?.NativeAuth){
+                                console.error('[iOS] ❌ NativeAuth plugin not found!');
+                                alert('Error: NativeAuth plugin not loaded. Plugins: ' + Object.keys(window.Capacitor?.Plugins||{}).join(', '));
                                 return false;
                             }
+
+                            console.log('[iOS] ✅ Calling native Google Sign-In...');
+
+                            // Call native Google Sign-In
+                            (async function(){
+                                try{
+                                    const result=await window.Capacitor.Plugins.NativeAuth.signInWithGoogle();
+                                    console.log('[iOS] Sign-in result:', JSON.stringify(result));
+
+                                    if(result?.idToken){
+                                        // Send ID token to backend
+                                        const backendUrl = 'https://app.my-coach-finder.com/auth/google/native?id_token='+encodeURIComponent(result.idToken);
+                                        console.log('[iOS] Sending token to backend...');
+
+                                        const response=await fetch(backendUrl,{
+                                            method:'POST',
+                                            headers:{'Content-Type':'application/json'}
+                                        });
+
+                                        if(response.ok){
+                                            const data=await response.json();
+                                            console.log('[iOS] ✅ Backend authentication successful');
+
+                                            // Store authentication data
+                                            localStorage.setItem('token',data.access_token||data.token);
+                                            localStorage.setItem('user',JSON.stringify(data.user||{}));
+
+                                            // Redirect to return_url or default
+                                            const redirectUrl = returnUrl
+                                                ? 'https://app.my-coach-finder.com' + returnUrl
+                                                : 'https://app.my-coach-finder.com/';
+                                            console.log('[iOS] Redirecting to:', redirectUrl);
+                                            window.location.href = redirectUrl;
+                                        }else{
+                                            const errorText = await response.text();
+                                            console.error('[iOS] Backend error:', response.status, errorText);
+                                            alert('Authentication failed: ' + response.status);
+                                        }
+                                    }else{
+                                        console.error('[iOS] No ID token received');
+                                        alert('No ID token received from Google');
+                                    }
+                                }catch(err){
+                                    console.error('[iOS] Sign-in error:', err.message);
+                                    alert('Sign-in error: ' + err.message);
+                                }
+                            })();
+
+                            return false;
                         }
                         el=el.parentElement;
                     }
                 },true);
                 window._clickListenerAdded = true;
-                console.log('[iOS] ✅ Click listener added');
+                console.log('[iOS] ✅ Click listener added (enhanced for OAuth buttons)');
             }
         })();
         """
