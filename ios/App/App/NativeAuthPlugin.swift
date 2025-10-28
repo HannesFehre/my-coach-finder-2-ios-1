@@ -228,6 +228,28 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                 window._bubbleListenerAdded = true;
                 console.log('[iOS] ✅ Backup listener added (BUBBLE phase)');
             }
+
+            // DIAGNOSTIC: Check plugin registration after initialization
+            setTimeout(() => {
+                console.log('[iOS] 🔍 Running diagnostic check...');
+
+                const plugins = window.Capacitor?.Plugins
+                    ? Object.keys(window.Capacitor.Plugins)
+                    : 'Capacitor not available';
+
+                // Show as alert (visible without Safari Web Inspector)
+                alert('Available Plugins: ' + JSON.stringify(plugins));
+
+                // Check specifically for NativeAuth
+                const hasNativeAuth = window.Capacitor?.Plugins?.NativeAuth
+                    ? 'YES - Plugin registered!'
+                    : 'NO - Plugin missing!';
+
+                alert('NativeAuth Plugin: ' + hasNativeAuth);
+
+                console.log('[iOS] 📋 Available plugins:', plugins);
+                console.log('[iOS] 🔌 NativeAuth status:', hasNativeAuth);
+            }, 2000);
         })();
         """
 
