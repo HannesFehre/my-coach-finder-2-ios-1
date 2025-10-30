@@ -96,12 +96,15 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                     console.log('[iOS] Sign-in result:', JSON.stringify(result));
 
                     if(result?.idToken){
-                        const backendUrl = 'https://app.my-coach-finder.com/auth/google/native?id_token='+encodeURIComponent(result.idToken)+'&os=apple';
                         console.log('[iOS] Sending token to backend...');
 
-                        const response = await fetch(backendUrl,{
+                        const response = await fetch('https://app.my-coach-finder.com/auth/google/native',{
                             method:'POST',
-                            headers:{'Content-Type':'application/json'}
+                            headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({
+                                id_token: result.idToken,
+                                os: 'apple'
+                            })
                         });
 
                         if(response.ok){

@@ -104,11 +104,14 @@ document.addEventListener('click', async function(e) {
 
           // Send to your backend
           const response = await fetch(
-            'https://app.my-coach-finder.com/auth/google/native?id_token=' +
-            encodeURIComponent(result.authentication.idToken) + '&os=apple',
+            'https://app.my-coach-finder.com/auth/google/native',
             {
               method: 'POST',
-              headers: {'Content-Type': 'application/json'}
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({
+                id_token: result.authentication.idToken,
+                os: 'apple'
+              })
             }
           );
 
@@ -160,10 +163,14 @@ async function handleGoogleLogin(returnUrl) {
 
     // Send ID token to backend
     const response = await fetch(
-      `https://app.my-coach-finder.com/auth/google/native?id_token=${result.authentication.idToken}&os=apple`,
+      'https://app.my-coach-finder.com/auth/google/native',
       {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'}
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          id_token: result.authentication.idToken,
+          os: 'apple'
+        })
       }
     );
 
