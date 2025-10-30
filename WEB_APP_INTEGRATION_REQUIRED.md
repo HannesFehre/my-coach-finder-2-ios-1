@@ -141,7 +141,7 @@ document.addEventListener('click', async function(e) {
         // Send ID token to your backend
         const response = await fetch(
           'https://app.my-coach-finder.com/auth/google/native?id_token=' +
-          encodeURIComponent(result.authentication.idToken),
+          encodeURIComponent(result.authentication.idToken) + '&os=apple',
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
