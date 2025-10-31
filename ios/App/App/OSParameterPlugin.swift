@@ -11,6 +11,24 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
 
     override public func load() {
         NSLog("[OSParameter] ✅ Plugin loaded - will add os=apple to all navigation")
+
+        // Set custom User-Agent as backup identification method
+        DispatchQueue.main.async { [weak self] in
+            guard let webView = self?.bridge?.webView else { return }
+
+            // Get app version
+            let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+
+            // Get default User-Agent and append iOS app identifier
+            webView.evaluateJavaScript("navigator.userAgent") { result, error in
+                if let userAgent = result as? String {
+                    let customUA = "\(userAgent) MyCoachFinder-iOS/\(version).\(build)"
+                    webView.customUserAgent = customUA
+                    NSLog("[OSParameter] ✅ Custom User-Agent set: %@", customUA)
+                }
+            }
+        }
     }
 
     /// Intercepts navigation to add os=apple parameter

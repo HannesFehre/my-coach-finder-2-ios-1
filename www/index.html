@@ -87,12 +87,21 @@
     </button>
 
     <script>
-        // PRODUCTION: Redirects to the web app
+        // PRODUCTION: Redirects to the web app with os=apple parameter
         // TESTING: Click "Test Google Auth Plugin" button to test locally
+
+        // Function to add os parameter to URL
+        function addOSParameter(url) {
+            const urlObj = new URL(url);
+            urlObj.searchParams.set('os', 'apple');
+            return urlObj.toString();
+        }
 
         // Redirect after 2 seconds (gives time to click test button)
         setTimeout(() => {
-            window.location.href = 'https://app.my-coach-finder.com/go?os=apple';
+            const targetUrl = addOSParameter('https://app.my-coach-finder.com/go');
+            console.log('[iOS] Redirecting to:', targetUrl);
+            window.location.href = targetUrl;
         }, 2000);
     </script>
 </body>
