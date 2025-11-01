@@ -104,6 +104,22 @@ workflows:
           # Verify certificate file size
           echo "Certificate size: $(ls -lh /tmp/distribution.p12 | awk '{print $5}')"
 
+          # Debug: Check which certificate we have
+          echo "Checking certificate fingerprint..."
+          CERT_HASH=$(openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024" -noout 2>&1 | grep -c "MAC verified OK" || true)
+          if [ "$CERT_HASH" = "1" ]; then
+            echo "✓ Certificate matches password: MyCoachFinder2024"
+          else
+            echo "✗ Certificate does NOT match password MyCoachFinder2024"
+            echo "Trying with old password..."
+            if openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024!" -noout 2>&1 | grep -q "MAC verified OK"; then
+              echo "⚠️  ERROR: You're using the OLD certificate!"
+              echo "⚠️  Please update CM_CERTIFICATE with the new certificate"
+              echo "⚠️  The new certificate is in: certificates/ios_distribution_simple_base64.txt"
+              exit 1
+            fi
+          fi
+
           # Import certificate with simplified approach
           # Note: Password should be MyCoachFinder2024 (no special characters)
           security import /tmp/distribution.p12 \
