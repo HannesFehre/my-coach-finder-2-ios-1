@@ -101,30 +101,48 @@ workflows:
           # Decode and save certificate
           echo "$CM_CERTIFICATE" | base64 --decode > /tmp/distribution.p12
 
-          # Verify certificate file size
+          # Verify certificate file size and hash
           echo "Certificate size: $(ls -lh /tmp/distribution.p12 | awk '{print $5}')"
+          echo "Certificate MD5: $(md5sum /tmp/distribution.p12 | cut -d' ' -f1)"
+          echo "Base64 length: ${#CM_CERTIFICATE}"
 
-          # Debug: Check which certificate we have
-          echo "Checking certificate fingerprint..."
-          CERT_HASH=$(openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024" -noout 2>&1 | grep -c "MAC verified OK" || true)
-          if [ "$CERT_HASH" = "1" ]; then
-            echo "✓ Certificate matches password: MyCoachFinder2024"
+          # Debug: Try multiple passwords
+          echo ""
+          echo "Testing certificate with various passwords..."
+
+          # Test password without special chars
+          if openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024" -noout 2>&1 | grep -q "MAC verified OK"; then
+            echo "✓ Password is: MyCoachFinder2024 (NEW certificate)"
+            CERT_PASSWORD="MyCoachFinder2024"
+          # Test password with exclamation
+          elif openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024!" -noout 2>&1 | grep -q "MAC verified OK"; then
+            echo "✓ Password is: MyCoachFinder2024! (OLD certificate)"
+            CERT_PASSWORD="MyCoachFinder2024!"
+          # Test with CM_CERTIFICATE_PASSWORD variable
+          elif openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"$CM_CERTIFICATE_PASSWORD" -noout 2>&1 | grep -q "MAC verified OK"; then
+            echo "✓ Password matches CM_CERTIFICATE_PASSWORD variable"
+            CERT_PASSWORD="$CM_CERTIFICATE_PASSWORD"
           else
-            echo "✗ Certificate does NOT match password MyCoachFinder2024"
-            echo "Trying with old password..."
-            if openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024!" -noout 2>&1 | grep -q "MAC verified OK"; then
-              echo "⚠️  ERROR: You're using the OLD certificate!"
-              echo "⚠️  Please update CM_CERTIFICATE with the new certificate"
-              echo "⚠️  The new certificate is in: certificates/ios_distribution_simple_base64.txt"
-              exit 1
-            fi
+            echo "❌ ERROR: Certificate does not match any known password!"
+            echo "Tried:"
+            echo "  - MyCoachFinder2024"
+            echo "  - MyCoachFinder2024!"
+            echo "  - CM_CERTIFICATE_PASSWORD variable value"
+            echo ""
+            echo "This means the certificate might be corrupted."
+            echo "Please re-copy the certificate from certificates/ios_distribution_simple_base64.txt"
+            echo ""
+            echo "Expected MD5 for new cert: 7bdf966d6f7c5279b8acb777b9129569"
+            echo "First 50 chars of base64 should be: MIIMfwIBAzCCDDUGCSqGSIb3DQEHAaCCDCYEggwiMIIMHjCC"
+            exit 1
           fi
 
-          # Import certificate with simplified approach
-          # Note: Password should be MyCoachFinder2024 (no special characters)
+          # Import certificate with the detected password
+          echo ""
+          echo "Importing certificate with detected password..."
           security import /tmp/distribution.p12 \
             -k "$KEYCHAIN_PATH" \
-            -P "MyCoachFinder2024" \
+            -P "$CERT_PASSWORD" \
             -T /usr/bin/codesign \
             -T /usr/bin/security \
             -A
