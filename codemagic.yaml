@@ -129,15 +129,27 @@ workflows:
           else
             echo "❌ ERROR: Certificate does not match any known password!"
             echo ""
-            echo "DEBUG: Let's see what's happening..."
-            echo "Testing with hardcoded password (no variable):"
-            openssl pkcs12 -in /tmp/distribution.p12 -passin pass:MyCoachFinder2024 -noout 2>&1 || true
+            echo "DEBUG: Let's see the actual OpenSSL errors..."
             echo ""
-            echo "Testing with quotes:"
-            openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024" -noout 2>&1 || true
+            echo "Test 1 - Hardcoded password (no quotes):"
+            openssl pkcs12 -in /tmp/distribution.p12 -passin pass:MyCoachFinder2024 -noout 2>&1
+            echo "Exit code: $?"
             echo ""
-            echo "Please check that CM_CERTIFICATE_PASSWORD is set to exactly: MyCoachFinder2024"
-            echo "(no quotes, no spaces, no exclamation mark)"
+            echo "Test 2 - With double quotes:"
+            openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024" -noout 2>&1
+            echo "Exit code: $?"
+            echo ""
+            echo "Test 3 - With stdin:"
+            echo "MyCoachFinder2024" | openssl pkcs12 -in /tmp/distribution.p12 -passin stdin -noout 2>&1
+            echo "Exit code: $?"
+            echo ""
+            echo "Test 4 - Check if file exists and size:"
+            ls -la /tmp/distribution.p12
+            file /tmp/distribution.p12
+            echo ""
+            echo "Test 5 - Try to extract cert info (will show MAC error):"
+            openssl pkcs12 -in /tmp/distribution.p12 -passin pass:MyCoachFinder2024 -info 2>&1 | head -5
+            echo ""
             exit 1
           fi
 
