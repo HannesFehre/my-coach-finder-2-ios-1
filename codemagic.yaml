@@ -95,6 +95,10 @@ workflows:
           set -e
           set -x
 
+          # Debug password (remove after fixing)
+          echo "Password length: ${#CM_CERTIFICATE_PASSWORD}"
+          echo "First 3 chars: ${CM_CERTIFICATE_PASSWORD:0:3}***"
+
           # Get the default keychain path and trim whitespace
           KEYCHAIN_PATH=$(security default-keychain -d user | tr -d '"' | xargs)
           echo "Keychain path: $KEYCHAIN_PATH"
@@ -102,8 +106,16 @@ workflows:
           # Decode and save certificate
           echo "$CM_CERTIFICATE" | base64 --decode > /tmp/distribution.p12
 
+          # Verify certificate file was created
+          ls -la /tmp/distribution.p12
+
+          # Try to verify the certificate with password first
+          echo "Testing certificate password..."
+          openssl pkcs12 -info -in /tmp/distribution.p12 -passin pass:"$CM_CERTIFICATE_PASSWORD" -noout || true
+
           # Import certificate to keychain using security command directly
-          security import /tmp/distribution.p12 -k "$KEYCHAIN_PATH" -P "$CM_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          # Use quotes around password to handle special characters
+          security import /tmp/distribution.p12 -k "$KEYCHAIN_PATH" -P "${CM_CERTIFICATE_PASSWORD}" -T /usr/bin/codesign -T /usr/bin/security
 
           # Set key partition list (required for codesigning)
           security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
