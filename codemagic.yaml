@@ -103,7 +103,17 @@ workflows:
 
           # Verify certificate file size and hash
           echo "Certificate size: $(ls -lh /tmp/distribution.p12 | awk '{print $5}')"
-          echo "Certificate MD5: $(md5sum /tmp/distribution.p12 | cut -d' ' -f1)"
+          CERT_MD5=$(md5sum /tmp/distribution.p12 | cut -d' ' -f1)
+          echo "Certificate MD5: $CERT_MD5"
+
+          # Check which certificate we have
+          if [ "$CERT_MD5" = "7bdf966d6f7c5279b8acb777b9129569" ]; then
+            echo "Certificate type: Original Linux-created (SHA256)"
+          elif [ "$CERT_MD5" = "a32cb8ca351f144927f8d9f61bf14321" ]; then
+            echo "Certificate type: macOS-compatible (SHA1-3DES)"
+          else
+            echo "Certificate type: Unknown"
+          fi
           echo "Base64 length: ${#CM_CERTIFICATE}"
 
           # Debug: Check CM_CERTIFICATE_PASSWORD variable
