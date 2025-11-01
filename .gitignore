@@ -45,3 +45,8 @@ ios_distribution.*
 ios_development.*
 *_base64.txt
 *base64.txt
+
+# Codemagic API keys and credentials (NEVER commit these!)
+codemagic_api_key.txt
+.codemagic_credentials
+CODEMAGIC_API_KEY.txt
