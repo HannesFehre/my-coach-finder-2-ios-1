@@ -155,13 +155,30 @@ workflows:
 
           # Import certificate with the detected password
           echo ""
-          echo "Importing certificate with detected password..."
-          security import /tmp/distribution.p12 \
-            -k "$KEYCHAIN_PATH" \
-            -P "$CERT_PASSWORD" \
-            -T /usr/bin/codesign \
-            -T /usr/bin/security \
-            -A
+          echo "Importing certificate - trying multiple methods..."
+
+          # Method 1: Direct hardcoded password without quotes
+          echo "Method 1: Direct password..."
+          security import /tmp/distribution.p12 -k "$KEYCHAIN_PATH" -P MyCoachFinder2024 -T /usr/bin/codesign -T /usr/bin/security -A || {
+            echo "Method 1 failed, trying Method 2..."
+
+            # Method 2: Using printf to avoid any shell interpretation
+            PASS=$(printf "MyCoachFinder2024")
+            security import /tmp/distribution.p12 -k "$KEYCHAIN_PATH" -P "$PASS" -T /usr/bin/codesign -T /usr/bin/security -A || {
+              echo "Method 2 failed, trying Method 3..."
+
+              # Method 3: Using environment variable but without quotes on -P
+              export CERT_PASS="MyCoachFinder2024"
+              security import /tmp/distribution.p12 -k "$KEYCHAIN_PATH" -P $CERT_PASS -T /usr/bin/codesign -T /usr/bin/security -A || {
+                echo "Method 3 failed. Checking certificate compatibility..."
+
+                # Debug: Try to import without password to see the error
+                echo "Testing import without password flag..."
+                security import /tmp/distribution.p12 -k "$KEYCHAIN_PATH" -A 2>&1 | head -5
+                exit 1
+              }
+            }
+          }
 
           # Set key partition list
           security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
