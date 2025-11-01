@@ -106,7 +106,11 @@ workflows:
           echo "Certificate MD5: $(md5sum /tmp/distribution.p12 | cut -d' ' -f1)"
           echo "Base64 length: ${#CM_CERTIFICATE}"
 
-          # Debug: Try multiple passwords
+          # Debug: Check CM_CERTIFICATE_PASSWORD variable
+          echo ""
+          echo "Debug: CM_CERTIFICATE_PASSWORD info:"
+          echo "  Length: ${#CM_CERTIFICATE_PASSWORD}"
+          echo "  First 3 chars: ${CM_CERTIFICATE_PASSWORD:0:3}***"
           echo ""
           echo "Testing certificate with various passwords..."
 
@@ -124,16 +128,16 @@ workflows:
             CERT_PASSWORD="$CM_CERTIFICATE_PASSWORD"
           else
             echo "❌ ERROR: Certificate does not match any known password!"
-            echo "Tried:"
-            echo "  - MyCoachFinder2024"
-            echo "  - MyCoachFinder2024!"
-            echo "  - CM_CERTIFICATE_PASSWORD variable value"
             echo ""
-            echo "This means the certificate might be corrupted."
-            echo "Please re-copy the certificate from certificates/ios_distribution_simple_base64.txt"
+            echo "DEBUG: Let's see what's happening..."
+            echo "Testing with hardcoded password (no variable):"
+            openssl pkcs12 -in /tmp/distribution.p12 -passin pass:MyCoachFinder2024 -noout 2>&1 || true
             echo ""
-            echo "Expected MD5 for new cert: 7bdf966d6f7c5279b8acb777b9129569"
-            echo "First 50 chars of base64 should be: MIIMfwIBAzCCDDUGCSqGSIb3DQEHAaCCDCYEggwiMIIMHjCC"
+            echo "Testing with quotes:"
+            openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024" -noout 2>&1 || true
+            echo ""
+            echo "Please check that CM_CERTIFICATE_PASSWORD is set to exactly: MyCoachFinder2024"
+            echo "(no quotes, no spaces, no exclamation mark)"
             exit 1
           fi
 
