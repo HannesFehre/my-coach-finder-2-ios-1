@@ -95,8 +95,8 @@ workflows:
           set -e
           set -x
 
-          # Get keychain path
-          KEYCHAIN_PATH=$(keychain get-path)
+          # Get the default keychain path
+          KEYCHAIN_PATH=$(security default-keychain -d user | tr -d '"')
           echo "Keychain path: $KEYCHAIN_PATH"
 
           # Decode and save certificate
