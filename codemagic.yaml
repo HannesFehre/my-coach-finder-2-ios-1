@@ -69,11 +69,14 @@ workflows:
       app_store_connect: codemagic_api_key
     environment:
       groups:
-        - app_store_signing
+        - ios_signing
       ios_signing:
         distribution_type: app_store
         bundle_identifier: MyCoachFinder
       vars:
+        CM_CERTIFICATE: $CM_CERTIFICATE_APPSTORE
+        CM_CERTIFICATE_PASSWORD: $CM_CERTIFICATE_PASSWORD_APPSTORE
+        CM_PROVISIONING_PROFILE: $CM_PROVISIONING_PROFILE_APPSTORE
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
         BUNDLE_IDENTIFIER: "MyCoachFinder"
