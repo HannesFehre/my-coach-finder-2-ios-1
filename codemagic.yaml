@@ -95,23 +95,26 @@ workflows:
           set -e
           set -x
 
-          # Decode and save certificate
-          echo "$CM_CERTIFICATE" | base64 --decode > /tmp/certificate.p12
+          # Create directories
+          mkdir -p ~/Library/MobileDevice/Certificates
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+
+          # Decode and save certificate to the location keychain expects
+          echo "$CM_CERTIFICATE" | base64 --decode > ~/Library/MobileDevice/Certificates/distribution.p12
 
           # Decode and save provisioning profile
           echo "$CM_PROVISIONING_PROFILE" | base64 --decode > /tmp/profile.mobileprovision
 
           # Use keychain add-certificates to import
-          export CM_CERTIFICATE_PATH=/tmp/certificate.p12
           keychain add-certificates
 
           # Install provisioning profile
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           PROFILE_UUID=$(security cms -D -i /tmp/profile.mobileprovision | grep -a UUID | grep -o "[-A-Z0-9]\{36\}")
           echo "Provisioning Profile UUID: $PROFILE_UUID"
           cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$PROFILE_UUID.mobileprovision
 
           # List installed profiles
+          echo "Installed provisioning profiles:"
           ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
 
       - name: Set up Xcode project signing
