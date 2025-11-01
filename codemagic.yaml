@@ -1,6 +1,3 @@
-integrations:
-  app_store_connect: codemagic_api_key
-
 workflows:
   ios-development:
     name: iOS Development Build
@@ -65,8 +62,6 @@ workflows:
     name: iOS App Store Build
     max_build_duration: 120
     instance_type: mac_mini_m1
-    integrations:
-      app_store_connect: codemagic_api_key
     environment:
       groups:
         - ios_signing
@@ -127,7 +122,9 @@ workflows:
 
     publishing:
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
         submit_to_app_store: false
 
