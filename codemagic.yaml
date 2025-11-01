@@ -70,9 +70,6 @@ workflows:
         XCODE_SCHEME: "App"
         BUNDLE_IDENTIFIER: "MyCoachFinder"
         APP_STORE_ID: "6503015097"
-        CM_CERTIFICATE: $CM_CERTIFICATE
-        CM_CERTIFICATE_PASSWORD: $CM_CERTIFICATE_PASSWORD
-        CM_PROVISIONING_PROFILE: $CM_PROVISIONING_PROFILE
       node: 20.19.5
       xcode: latest
       cocoapods: default
