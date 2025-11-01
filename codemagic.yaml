@@ -69,7 +69,10 @@ workflows:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
         BUNDLE_IDENTIFIER: "MyCoachFinder"
-        APP_STORE_ID: "1234567890"
+        APP_STORE_ID: "6503015097"
+        CM_CERTIFICATE: $CM_CERTIFICATE
+        CM_CERTIFICATE_PASSWORD: $CM_CERTIFICATE_PASSWORD
+        CM_PROVISIONING_PROFILE: $CM_PROVISIONING_PROFILE
       node: 20.19.5
       xcode: latest
       cocoapods: default
@@ -86,23 +89,32 @@ workflows:
         script: |
           npx cap sync ios
 
-      - name: Set up keychain
+      - name: Set up code signing
         script: |
+          set -e
+          set -x
+
+          # Initialize keychain
           keychain initialize
 
-      - name: Fetch signing files
-        script: |
-          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" \
-            --type IOS_APP_STORE \
-            --create
+          # Decode and save certificate
+          echo "$CM_CERTIFICATE" | base64 --decode > /tmp/certificate.p12
 
-      - name: Add certificates to keychain
-        script: |
-          keychain add-certificates
+          # Decode and save provisioning profile
+          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > /tmp/profile.mobileprovision
 
-      - name: Set up code signing settings
-        script: |
-          xcode-project use-profiles
+          # Import certificate to keychain
+          security import /tmp/certificate.p12 -k ~/Library/Keychains/codemagic.keychain-db -P "$CM_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+
+          # Install provisioning profile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          PROFILE_UUID=$(security cms -D -i /tmp/profile.mobileprovision | grep -a UUID | grep -o "[-A-Z0-9]\{36\}")
+          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$PROFILE_UUID.mobileprovision
+
+          # Set provisioning profile in Xcode project
+          cd ios/App
+          /usr/libexec/PlistBuddy -c "Set :buildSettings:PROVISIONING_PROFILE_SPECIFIER $PROFILE_UUID" App.xcodeproj/project.pbxproj || true
+          /usr/libexec/PlistBuddy -c "Set :buildSettings:DEVELOPMENT_TEAM 374793446M" App.xcodeproj/project.pbxproj || true
 
       - name: Increment build number
         script: |
