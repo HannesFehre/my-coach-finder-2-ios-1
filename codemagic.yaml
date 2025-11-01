@@ -114,16 +114,16 @@ workflows:
           echo ""
           echo "Testing certificate with various passwords..."
 
-          # Test password without special chars
-          if openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024" -noout 2>&1 | grep -q "MAC verified OK"; then
+          # Test password without special chars (check exit code, not output)
+          if openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024" -noout 2>/dev/null; then
             echo "✓ Password is: MyCoachFinder2024 (NEW certificate)"
             CERT_PASSWORD="MyCoachFinder2024"
           # Test password with exclamation
-          elif openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024!" -noout 2>&1 | grep -q "MAC verified OK"; then
+          elif openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"MyCoachFinder2024!" -noout 2>/dev/null; then
             echo "✓ Password is: MyCoachFinder2024! (OLD certificate)"
             CERT_PASSWORD="MyCoachFinder2024!"
           # Test with CM_CERTIFICATE_PASSWORD variable
-          elif openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"$CM_CERTIFICATE_PASSWORD" -noout 2>&1 | grep -q "MAC verified OK"; then
+          elif openssl pkcs12 -in /tmp/distribution.p12 -passin pass:"$CM_CERTIFICATE_PASSWORD" -noout 2>/dev/null; then
             echo "✓ Password matches CM_CERTIFICATE_PASSWORD variable"
             CERT_PASSWORD="$CM_CERTIFICATE_PASSWORD"
           else
