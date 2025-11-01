@@ -70,16 +70,11 @@ workflows:
     environment:
       groups:
         - ios_signing
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: MyCoachFinder
       vars:
-        CM_CERTIFICATE: $CM_CERTIFICATE_APPSTORE
-        CM_CERTIFICATE_PASSWORD: $CM_CERTIFICATE_PASSWORD_APPSTORE
-        CM_PROVISIONING_PROFILE: $CM_PROVISIONING_PROFILE_APPSTORE
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
         BUNDLE_IDENTIFIER: "MyCoachFinder"
+        APP_STORE_ID: "1234567890"
       node: 20.19.5
       xcode: latest
       cocoapods: default
@@ -99,6 +94,12 @@ workflows:
       - name: Set up keychain
         script: |
           keychain initialize
+
+      - name: Fetch signing files
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" \
+            --type IOS_APP_STORE \
+            --create
 
       - name: Add certificates to keychain
         script: |
