@@ -165,33 +165,26 @@ workflows:
 
           # Import certificate with the detected password
           echo ""
-          echo "Importing certificate - trying multiple methods..."
+          echo "Importing certificate..."
+          security import /tmp/distribution.p12 \
+            -k "$KEYCHAIN_PATH" \
+            -P MyCoachFinder2024 \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security \
+            -A
 
-          # Method 1: Direct hardcoded password without quotes
-          echo "Method 1: Direct password..."
-          security import /tmp/distribution.p12 -k "$KEYCHAIN_PATH" -P MyCoachFinder2024 -T /usr/bin/codesign -T /usr/bin/security -A || {
-            echo "Method 1 failed, trying Method 2..."
+          if [ $? -eq 0 ]; then
+            echo "✅ Certificate imported successfully"
+          else
+            echo "❌ Certificate import failed"
+            exit 1
+          fi
 
-            # Method 2: Using printf to avoid any shell interpretation
-            PASS=$(printf "MyCoachFinder2024")
-            security import /tmp/distribution.p12 -k "$KEYCHAIN_PATH" -P "$PASS" -T /usr/bin/codesign -T /usr/bin/security -A || {
-              echo "Method 2 failed, trying Method 3..."
-
-              # Method 3: Using environment variable but without quotes on -P
-              export CERT_PASS="MyCoachFinder2024"
-              security import /tmp/distribution.p12 -k "$KEYCHAIN_PATH" -P $CERT_PASS -T /usr/bin/codesign -T /usr/bin/security -A || {
-                echo "Method 3 failed. Checking certificate compatibility..."
-
-                # Debug: Try to import without password to see the error
-                echo "Testing import without password flag..."
-                security import /tmp/distribution.p12 -k "$KEYCHAIN_PATH" -A 2>&1 | head -5
-                exit 1
-              }
-            }
+          # Set key partition list (allow codesign to access the key without password)
+          echo "Setting key partition list..."
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH" 2>&1 || {
+            echo "⚠️  Warning: set-key-partition-list failed, but continuing..."
           }
-
-          # Set key partition list
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
 
           # Decode and install provisioning profile
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
