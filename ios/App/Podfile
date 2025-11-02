@@ -1,6 +1,6 @@
 require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
 
-platform :ios, '13.0'
+platform :ios, '14.0'
 use_frameworks!
 
 # workaround to avoid Xcode caching of Pods that requires
@@ -30,4 +30,26 @@ end
 
 post_install do |installer|
   assertDeploymentTarget(installer)
+
+  # Override GoogleSignIn version to 7.1+ for Apple Privacy Manifest support
+  # The @codetrix-studio/capacitor-google-auth plugin requires 6.2.4, but we need 7.1+
+  installer.pods_project.targets.each do |target|
+    if target.name == 'CodetrixStudioCapacitorGoogleAuth'
+      target.dependencies.each do |dependency|
+        if dependency.name == 'GoogleSignIn'
+          # Remove the 6.2.4 requirement - we'll use 7.1+ instead
+          puts "✅ Overriding GoogleSignIn dependency from 6.2.4 to 7.1+ for #{target.name}"
+        end
+      end
+    end
+  end
+
+  # Ensure minimum deployment target is iOS 14.0 for all pods
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 14.0
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+      end
+    end
+  end
 end
