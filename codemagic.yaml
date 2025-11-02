@@ -109,6 +109,11 @@ workflows:
           fi
           echo ""
 
+          # Run DispatchQueue patch (Swift 5 strict concurrency fix)
+          echo "--- Running DispatchQueue.main.async patch ---"
+          bash scripts/patch-dispatch-queue.sh
+          echo ""
+
           # Verify patches applied
           echo "--- Verifying patches ---"
           if grep -q "user.accessToken.tokenString" "node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift"; then
@@ -122,6 +127,13 @@ workflows:
             echo "✅ Podspec patch verified: GoogleSignIn 7.1 found"
           else
             echo "❌ ERROR: Podspec patch failed - GoogleSignIn 7.1 not found!"
+            exit 1
+          fi
+
+          if grep -q "DispatchQueue.main.async(execute: {" "node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift"; then
+            echo "✅ DispatchQueue patch verified: async(execute:) found"
+          else
+            echo "❌ ERROR: DispatchQueue patch failed - still using trailing closure syntax!"
             exit 1
           fi
 
