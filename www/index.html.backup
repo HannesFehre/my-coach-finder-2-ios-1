@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>My Coach Finder</title>
+
+    <!-- Load Capacitor core -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@capacitor/core@latest/dist/esm/index.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+        #splash.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #splash h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+            padding: 0 20px;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .test-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            padding: 15px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10000;
+        }
+    </style>
+</head>
+<body>
+    <div id="splash">
+        <h1>My Coach Finder</h1>
+        <div class="spinner"></div>
+    </div>
+
+    <!-- TEST BUTTON: Remove this after web app is updated -->
+    <button class="test-btn" onclick="window.location.href='/test-google-auth.html'">
+        🧪 Test Google Auth Plugin
+    </button>
+
+    <script>
+        // PRODUCTION: Redirects to the web app with os=apple parameter
+        // TESTING: Click "Test Google Auth Plugin" button to test locally
+
+        // Function to add os parameter to URL
+        function addOSParameter(url) {
+            const urlObj = new URL(url);
+            urlObj.searchParams.set('os', 'apple');
+            return urlObj.toString();
+        }
+
+        // Redirect after 2 seconds (gives time to click test button)
+        setTimeout(() => {
+            const targetUrl = addOSParameter('https://app.my-coach-finder.com/go');
+            console.log('[iOS] Redirecting to:', targetUrl);
+            window.location.href = targetUrl;
+        }, 2000);
+    </script>
+</body>
+</html>
