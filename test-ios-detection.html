@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS App Detection Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .test-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        .result {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .status.yes {
+            background: #10b981;
+            color: white;
+        }
+        .status.no {
+            background: #ef4444;
+            color: white;
+        }
+        .label {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .navigation-test {
+            margin-top: 20px;
+        }
+        .navigation-test a {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+        }
+        .navigation-test a:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 iOS App Detection Test</h1>
+
+        <!-- Detection Results -->
+        <div class="test-section">
+            <h2>1. Query Parameter Detection</h2>
+            <div class="result">
+                <div class="label">Current URL:</div>
+                <div id="currentUrl"></div>
+            </div>
+            <div class="result">
+                <div class="label">os parameter:</div>
+                <span id="osParam" class="status"></span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. User-Agent Detection</h2>
+            <div class="result">
+                <div class="label">User-Agent:</div>
+                <div id="userAgent"></div>
+            </div>
+            <div class="result">
+                <div class="label">Contains "MyCoachFinder-iOS":</div>
+                <span id="iosUserAgent" class="status"></span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. Combined Detection</h2>
+            <div class="result">
+                <div class="label">Detected as iOS App:</div>
+                <span id="isIOSApp" class="status"></span>
+            </div>
+            <div class="result">
+                <div class="label">Detection Method:</div>
+                <span id="detectionMethod"></span>
+            </div>
+        </div>
+
+        <!-- Navigation Test -->
+        <div class="test-section">
+            <h2>4. Navigation Test</h2>
+            <p style="margin-bottom: 15px;">Click these links to test if os=apple parameter is added:</p>
+            <div class="navigation-test">
+                <a href="https://app.my-coach-finder.com/test">Test Link 1</a>
+                <a href="https://app.my-coach-finder.com/dashboard">Test Link 2</a>
+                <a href="https://app.my-coach-finder.com/profile?id=123">Test Link 3</a>
+            </div>
+            <button onclick="testJSRedirect()">Test JavaScript Redirect</button>
+            <button onclick="testPushState()">Test SPA Navigation</button>
+        </div>
+
+        <!-- Console Logs -->
+        <div class="test-section">
+            <h2>5. JavaScript Injection Check</h2>
+            <div class="result">
+                <div class="label">OSParameter Plugin Active:</div>
+                <span id="pluginActive" class="status"></span>
+            </div>
+            <button onclick="checkConsole()">Check Console Logs</button>
+            <div id="consoleInfo" style="margin-top: 10px; font-size: 14px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Parse URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const osParam = urlParams.get('os');
+        const userAgent = navigator.userAgent;
+
+        // Display current URL
+        document.getElementById('currentUrl').textContent = window.location.href;
+
+        // Check os parameter
+        if (osParam === 'apple') {
+            document.getElementById('osParam').textContent = '✅ YES (os=apple)';
+            document.getElementById('osParam').className = 'status yes';
+        } else {
+            document.getElementById('osParam').textContent = osParam ? `❌ NO (os=${osParam})` : '❌ NO';
+            document.getElementById('osParam').className = 'status no';
+        }
+
+        // Display User-Agent
+        document.getElementById('userAgent').textContent = userAgent;
+
+        // Check if User-Agent contains iOS identifier
+        const hasIOSUserAgent = userAgent.includes('MyCoachFinder-iOS');
+        if (hasIOSUserAgent) {
+            document.getElementById('iosUserAgent').textContent = '✅ YES';
+            document.getElementById('iosUserAgent').className = 'status yes';
+        } else {
+            document.getElementById('iosUserAgent').textContent = '❌ NO';
+            document.getElementById('iosUserAgent').className = 'status no';
+        }
+
+        // Combined detection
+        const isIOSApp = (osParam === 'apple') || hasIOSUserAgent;
+        if (isIOSApp) {
+            document.getElementById('isIOSApp').textContent = '✅ YES';
+            document.getElementById('isIOSApp').className = 'status yes';
+
+            let method = [];
+            if (osParam === 'apple') method.push('Query Parameter');
+            if (hasIOSUserAgent) method.push('User-Agent');
+            document.getElementById('detectionMethod').textContent = method.join(' + ');
+        } else {
+            document.getElementById('isIOSApp').textContent = '❌ NO';
+            document.getElementById('isIOSApp').className = 'status no';
+            document.getElementById('detectionMethod').textContent = 'Not detected';
+        }
+
+        // Check if plugin is active
+        const pluginActive = window.__OSParameterInjected === true;
+        if (pluginActive) {
+            document.getElementById('pluginActive').textContent = '✅ YES';
+            document.getElementById('pluginActive').className = 'status yes';
+        } else {
+            document.getElementById('pluginActive').textContent = '❌ NO';
+            document.getElementById('pluginActive').className = 'status no';
+        }
+
+        // Test functions
+        function testJSRedirect() {
+            console.log('[Test] JavaScript redirect test');
+            window.location.href = 'https://app.my-coach-finder.com/test-redirect';
+        }
+
+        function testPushState() {
+            console.log('[Test] SPA navigation test');
+            window.history.pushState({}, '', 'https://app.my-coach-finder.com/test-spa');
+            alert('Check the URL - it should have ?os=apple parameter');
+        }
+
+        function checkConsole() {
+            const info = document.getElementById('consoleInfo');
+            info.innerHTML = `
+                <div style="margin-top: 10px;">
+                    <strong>Expected console logs in iOS app:</strong><br>
+                    <code>[OSParameter] 🚀 JavaScript injection active</code><br>
+                    <code>[OSParameter] 🔄 Fixing current URL</code><br>
+                    <code>[OSParameter] ✅ Added os=apple: ...</code><br>
+                    <code>[OSParameter] ✅ All navigation interception active</code><br>
+                    <br>
+                    <strong>How to view:</strong><br>
+                    1. Connect iPhone to computer<br>
+                    2. Safari → Develop → [Your iPhone] → [My Coach Finder]<br>
+                    3. Check Console tab
+                </div>
+            `;
+        }
+
+        // Log on page load
+        console.log('=== iOS App Detection Test ===');
+        console.log('URL:', window.location.href);
+        console.log('os parameter:', osParam);
+        console.log('User-Agent:', userAgent);
+        console.log('Detected as iOS app:', isIOSApp);
+        console.log('Plugin active:', pluginActive);
+    </script>
+</body>
+</html>
