@@ -3,7 +3,7 @@
   "appName": "My Coach Finder",
   "webDir": "www",
   "server": {
-    "url": "https://app.my-coach-finder.com/go",
+    "url": "https://app.my-coach-finder.com/go?os=apple",
     "cleartext": false,
     "allowNavigation": [
       "app.my-coach-finder.com",
