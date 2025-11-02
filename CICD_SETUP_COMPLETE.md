@@ -253,6 +253,45 @@ This declares the app only uses standard iOS encryption, automatically skipping 
 
 ---
 
+### 5. Apple Privacy Manifest Requirements ⭐ **IMPORTANT**
+
+**Problem:**
+TestFlight rejection with ITMS-91061 error - missing PrivacyInfo.xcprivacy files.
+
+**Error:**
+```
+ITMS-91061: Missing privacy manifest - GTMAppAuth.xcframework
+ITMS-91061: Missing privacy manifest - GTMSessionFetcher.xcframework
+ITMS-91061: Missing privacy manifest - GoogleSignIn.xcframework
+```
+
+**Root Cause:**
+- Older versions of Google Sign-In SDKs don't include Apple-required privacy manifests
+- Apple requires PrivacyInfo.xcprivacy files in all third-party frameworks starting Spring 2024
+- App was using Google SDKs installed as transitive dependencies without explicit version constraints
+
+**Solution:**
+Updated `ios/App/Podfile` to use privacy-manifest-compliant SDK versions:
+
+```ruby
+# Google Sign-In SDKs with Apple Privacy Manifest support
+pod 'GoogleSignIn', '~> 7.1'
+pod 'GTMAppAuth', '~> 4.1.1'
+pod 'GTMSessionFetcher', '~> 3.3'
+```
+
+**Version Requirements:**
+- GoogleSignIn: 7.1.0 or later
+- GTMAppAuth: 4.1.1 or later
+- GTMSessionFetcher: 3.3.0 or later
+
+**Files Changed:**
+- `ios/App/Podfile` - Added explicit SDK version constraints
+- `ios/App/App.xcodeproj/project.pbxproj` - Updated version to 1.5
+- `Apple_Privacy_Manifest_Requirements_for_Google_SDKs.md` - Reference documentation
+
+---
+
 ## Troubleshooting
 
 ### Build Fails at Code Signing
@@ -393,17 +432,23 @@ AuthKey_*.p8
 
 ## Next Steps
 
-1. **TestFlight Testing**
+1. **Trigger New Build (v1.5)**
+   - Privacy manifest fixes implemented
+   - Google SDKs updated to compliant versions
+   - Ready for Codemagic production build
+   - Will resolve ITMS-91061 TestFlight rejection
+
+2. **TestFlight Testing**
    - Add internal testers
    - Distribute build
    - Collect feedback
 
-2. **App Store Submission**
+3. **App Store Submission**
    - Complete App Store listing
    - Add screenshots
    - Submit for review
 
-3. **Maintenance**
+4. **Maintenance**
    - Monitor certificate expiration
    - Keep Xcode/dependencies updated
    - Increment version for each release
@@ -430,6 +475,7 @@ AuthKey_*.p8
 
 ---
 
-*Last successful build: November 2, 2025*
+*Last configuration update: November 2, 2025 - Privacy manifest fixes (v1.5)*
+*Last successful build: November 2, 2025 (v1.4)*
 *Certificate valid until: November 1, 2026*
 *Next renewal: October 1, 2026*
