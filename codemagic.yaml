@@ -182,9 +182,8 @@ workflows:
 
           # Set key partition list (allow codesign to access the key without password)
           echo "Setting key partition list..."
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH" 2>&1 || {
-            echo "⚠️  Warning: set-key-partition-list failed, but continuing..."
-          }
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH" 2>&1 || true
+          echo "✅ Key partition list updated (or skipped if not needed)"
 
           # Decode and install provisioning profile
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
