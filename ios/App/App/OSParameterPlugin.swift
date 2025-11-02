@@ -95,3 +95,8 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
         return true
     }
 }
+
+// CRITICAL: Register plugin with Capacitor - WITHOUT THIS IT DOESN'T WORK!
+CAP_PLUGIN(OSParameterPlugin, "OSParameter",
+    // No methods needed - we only use shouldOverrideLoad
+)
