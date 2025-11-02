@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Force OS Parameter</title>
+    <style>
+        body {
+            font-family: -apple-system, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .url {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:active {
+            opacity: 0.7;
+        }
+        .yes { color: green; font-weight: bold; }
+        .no { color: red; font-weight: bold; }
+        #log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Force OS Parameter</h1>
+
+    <div class="box">
+        <h2>Current URL</h2>
+        <div class="url" id="currentUrl"></div>
+        <div id="status" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="box">
+        <h2>Actions</h2>
+        <button onclick="forceAddParameter()">🚀 Force Add os=apple</button>
+        <button onclick="testPlugin()">🧪 Test Plugin Available</button>
+        <button onclick="goToLogin()">🔐 Go to Login</button>
+        <button onclick="goToRegister()">📝 Go to Register</button>
+    </div>
+
+    <div class="box">
+        <h2>Debug Log</h2>
+        <div id="log"></div>
+    </div>
+
+    <script type="module">
+        import { Capacitor } from 'https://cdn.jsdelivr.net/npm/@capacitor/core@latest/dist/esm/index.js';
+
+        let logDiv = document.getElementById('log');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus() {
+            const url = window.location.href;
+            document.getElementById('currentUrl').textContent = url;
+
+            const hasParam = url.includes('os=apple');
+            const statusDiv = document.getElementById('status');
+
+            if (hasParam) {
+                statusDiv.innerHTML = '<span class="yes">✅ os=apple parameter is present</span>';
+                log('✅ URL has os=apple parameter');
+            } else {
+                statusDiv.innerHTML = '<span class="no">❌ os=apple parameter is MISSING</span>';
+                log('❌ URL missing os=apple parameter');
+            }
+        }
+
+        window.forceAddParameter = async function() {
+            log('🚀 Calling OSParameter.addOSParameter()...');
+
+            try {
+                const result = await Capacitor.Plugins.OSParameter.addOSParameter();
+                log(`✅ Success: ${JSON.stringify(result)}`);
+                updateStatus();
+            } catch (error) {
+                log(`❌ Error: ${error.message || error}`);
+            }
+        };
+
+        window.testPlugin = async function() {
+            log('🧪 Testing if OSParameter plugin is available...');
+
+            if (Capacitor.Plugins.OSParameter) {
+                log('✅ OSParameter plugin is available!');
+                log(`Plugin methods: ${Object.keys(Capacitor.Plugins.OSParameter)}`);
+            } else {
+                log('❌ OSParameter plugin is NOT available!');
+                log('Available plugins: ' + Object.keys(Capacitor.Plugins).join(', '));
+            }
+        };
+
+        window.goToLogin = function() {
+            log('🔐 Navigating to login...');
+            window.location.href = 'https://app.my-coach-finder.com/auth/login';
+        };
+
+        window.goToRegister = function() {
+            log('📝 Navigating to register...');
+            window.location.href = 'https://app.my-coach-finder.com/auth/register';
+        };
+
+        // Initial status update
+        log('=== Force OS Parameter Tool ===');
+        log('This tool allows you to manually add os=apple parameter');
+        updateStatus();
+
+        // Auto-test plugin on load
+        setTimeout(() => {
+            testPlugin();
+        }, 500);
+    </script>
+</body>
+</html>
