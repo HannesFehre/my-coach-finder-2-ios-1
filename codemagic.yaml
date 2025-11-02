@@ -61,8 +61,8 @@ workflows:
             exit 1
           fi
 
-          if grep -q "DispatchQueue.main.async(execute: {" "node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift"; then
-            echo "✅ DispatchQueue patch verified: async(execute:) found"
+          if grep -q "DispatchQueue.main.async({" "node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift"; then
+            echo "✅ DispatchQueue patch verified: async({ found"
           else
             echo "❌ ERROR: DispatchQueue patch failed - still using trailing closure syntax!"
             exit 1
@@ -174,8 +174,8 @@ workflows:
             exit 1
           fi
 
-          if grep -q "DispatchQueue.main.async(execute: {" "node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift"; then
-            echo "✅ DispatchQueue patch verified: async(execute:) found"
+          if grep -q "DispatchQueue.main.async({" "node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift"; then
+            echo "✅ DispatchQueue patch verified: async({ found"
           else
             echo "❌ ERROR: DispatchQueue patch failed - still using trailing closure syntax!"
             exit 1
