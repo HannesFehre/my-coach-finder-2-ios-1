@@ -78,6 +78,13 @@ workflows:
         script: |
           npm install
 
+      - name: Patch Google Auth plugin for GoogleSignIn 7.x
+        script: |
+          echo "Running Google Auth patches for GoogleSignIn 7.x compatibility..."
+          bash scripts/patch-google-auth-podspec.sh
+          python3 scripts/patch-google-auth-swift.py || bash scripts/patch-google-auth-swift.sh
+          echo "Patches applied successfully"
+
       - name: Install CocoaPods dependencies
         script: |
           cd ios/App && pod install

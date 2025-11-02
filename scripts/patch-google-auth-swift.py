@@ -44,6 +44,14 @@ content = re.sub(
     content
 )
 
+# Fix 1b: Remove serverAuthCode (doesn't exist in GoogleSignIn 7.x)
+# GoogleSignIn 7.x removed the serverAuthCode property from GIDGoogleUser
+content = re.sub(
+    r'"serverAuthCode":\s*user\.serverAuthCode\s*\?\?\s*NSNull\(\),?\s*\n',
+    '',
+    content
+)
+
 # Fix 2: refresh() function
 # Replace the entire authentication.do block with direct token access
 # OLD pattern:
