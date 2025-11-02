@@ -198,12 +198,21 @@ workflows:
           echo "✅ Provisioning profile decoded"
 
           # Get profile UUID and install
-          PROFILE_UUID=$(security cms -D -i /tmp/profile.mobileprovision | grep UUID | grep -o "[-A-Z0-9]\{36\}")
+          echo "Extracting provisioning profile UUID..."
+
+          # Try to extract UUID - show output for debugging
+          security cms -D -i /tmp/profile.mobileprovision > /tmp/profile_content.txt 2>&1
+
+          echo "Looking for UUID in provisioning profile..."
+          grep -i uuid /tmp/profile_content.txt | head -5
+
+          # Extract UUID with case-insensitive search
+          PROFILE_UUID=$(grep -i uuid /tmp/profile_content.txt | grep -o "[A-F0-9]\{8\}-[A-F0-9]\{4\}-[A-F0-9]\{4\}-[A-F0-9]\{4\}-[A-F0-9]\{12\}" | head -1)
 
           if [ -z "$PROFILE_UUID" ]; then
             echo "❌ Failed to extract provisioning profile UUID"
-            echo "Trying alternative extraction method..."
-            security cms -D -i /tmp/profile.mobileprovision | grep -A 1 UUID
+            echo "Showing first 30 lines of provisioning profile content:"
+            head -30 /tmp/profile_content.txt
             exit 1
           fi
 
