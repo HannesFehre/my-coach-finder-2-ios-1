@@ -79,7 +79,14 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin, WKNavigationDelegat
                     const urlObj = new URL(url, window.location.href);
                     urlObj.searchParams.set('os', 'apple');
                     const newUrl = urlObj.toString();
-                    console.log('[OSParameter] ✅ Added os=apple:', url, '→', newUrl);
+
+                    // Special logging for critical auth URLs
+                    if (urlObj.pathname.includes('/auth/login') || urlObj.pathname.includes('/auth/register')) {
+                        console.log('[OSParameter] ⚠️ CRITICAL AUTH URL - Added os=apple:', url, '→', newUrl);
+                    } else {
+                        console.log('[OSParameter] ✅ Added os=apple:', url, '→', newUrl);
+                    }
+
                     return newUrl;
                 } catch (e) {
                     console.warn('[OSParameter] ⚠️ Could not parse URL:', url, e);
@@ -87,13 +94,18 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin, WKNavigationDelegat
                 }
             }
 
-            // 1. Fix current URL on page load
+            // 1. Fix current URL on page load (CRITICAL for auth pages)
             (function fixCurrentURL() {
                 const currentUrl = window.location.href;
                 if (currentUrl.includes('my-coach-finder.com') && !currentUrl.includes('os=apple')) {
                     const newUrl = addOSParameter(currentUrl);
                     if (newUrl !== currentUrl) {
-                        console.log('[OSParameter] 🔄 Fixing current URL');
+                        const isAuthPage = currentUrl.includes('/auth/');
+                        if (isAuthPage) {
+                            console.log('[OSParameter] ⚠️ CRITICAL: Fixing auth page URL');
+                        } else {
+                            console.log('[OSParameter] 🔄 Fixing current URL');
+                        }
                         window.history.replaceState(null, '', newUrl);
                     }
                 }
@@ -161,6 +173,38 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin, WKNavigationDelegat
 
     // Forward other WKNavigationDelegate methods to original delegate
     public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        // CRITICAL: Intercept auth URLs at native level to guarantee os=apple parameter
+        if let url = navigationAction.request.url {
+            let urlString = url.absoluteString
+            let path = url.path
+
+            // Check if this is an auth URL
+            let isAuthURL = path.contains("/auth/login") || path.contains("/auth/register")
+            let isMCFDomain = url.host?.hasSuffix("my-coach-finder.com") ?? false
+            let hasOSParam = urlString.contains("os=apple")
+
+            if isAuthURL && isMCFDomain && !hasOSParam {
+                // CRITICAL: Auth URL without os=apple - add it now!
+                NSLog("[OSParameter] ⚠️ CRITICAL: Intercepting auth URL without os=apple: %@", urlString)
+
+                if var components = URLComponents(url: url, resolvingAgainstBaseURL: true) {
+                    var queryItems = components.queryItems ?? []
+                    queryItems.append(URLQueryItem(name: "os", value: "apple"))
+                    components.queryItems = queryItems
+
+                    if let modifiedURL = components.url {
+                        NSLog("[OSParameter] ✅ CRITICAL: Modified auth URL: %@ → %@", urlString, modifiedURL.absoluteString)
+
+                        // Cancel this navigation and load the modified URL
+                        decisionHandler(.cancel)
+                        webView.load(URLRequest(url: modifiedURL))
+                        return
+                    }
+                }
+            }
+        }
+
+        // Forward to original delegate
         if let original = originalNavigationDelegate {
             original.webView?(webView, decidePolicyFor: navigationAction, decisionHandler: decisionHandler)
         } else {

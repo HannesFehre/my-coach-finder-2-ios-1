@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth URL Test - My Coach Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .info h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .url-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        .current-url {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+        .status {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .status.yes {
+            background: #10b981;
+            color: white;
+        }
+        .status.no {
+            background: #ef4444;
+            color: white;
+        }
+        button, a.button {
+            display: block;
+            width: 100%;
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 12px;
+            text-decoration: none;
+            text-align: center;
+        }
+        button:hover, a.button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .test-section h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .method-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Auth URL Test</h1>
+
+        <div class="info">
+            <h2>Current Page Status</h2>
+            <div class="current-url" id="currentUrl"></div>
+            <div>
+                <strong>os=apple parameter:</strong>
+                <span id="osParam" class="status"></span>
+            </div>
+        </div>
+
+        <div class="info">
+            <h2>⚠️ Critical Auth URLs</h2>
+            <p style="margin-bottom: 15px;">These URLs MUST have <code>?os=apple</code> parameter:</p>
+            <div class="url-box">https://app.my-coach-finder.com/auth/login?os=apple</div>
+            <div class="url-box">https://app.my-coach-finder.com/auth/register?os=apple</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Method 1: Direct Link Click</h3>
+            <div class="method-label">Tests: Link interception + Native navigation delegate</div>
+            <a href="https://app.my-coach-finder.com/auth/login" class="button">
+                🔗 Go to Login (via link)
+            </a>
+            <a href="https://app.my-coach-finder.com/auth/register" class="button">
+                🔗 Go to Register (via link)
+            </a>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Method 2: JavaScript Redirect</h3>
+            <div class="method-label">Tests: window.location.href interception</div>
+            <button onclick="testJSLogin()">
+                📍 Go to Login (window.location)
+            </button>
+            <button onclick="testJSRegister()">
+                📍 Go to Register (window.location)
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Method 3: SPA Navigation</h3>
+            <div class="method-label">Tests: history.pushState interception</div>
+            <button onclick="testSPALogin()">
+                🔄 Go to Login (pushState)
+            </button>
+            <button onclick="testSPARegister()">
+                🔄 Go to Register (pushState)
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Method 4: window.open</h3>
+            <div class="method-label">Tests: window.open interception</div>
+            <button onclick="testOpenLogin()">
+                🪟 Open Login (window.open)
+            </button>
+            <button onclick="testOpenRegister()">
+                🪟 Open Register (window.open)
+            </button>
+        </div>
+
+        <div class="info">
+            <h2>✅ Expected Results</h2>
+            <p><strong>In Console (Safari Web Inspector):</strong></p>
+            <div class="url-box" style="margin-top: 10px;">
+                [OSParameter] ⚠️ CRITICAL AUTH URL - Added os=apple: .../auth/login → .../auth/login?os=apple
+            </div>
+            <p style="margin-top: 15px;"><strong>In URL Bar:</strong></p>
+            <div class="url-box" style="margin-top: 10px;">
+                https://app.my-coach-finder.com/auth/login?os=apple ✅
+            </div>
+            <p style="margin-top: 15px;"><strong>In Backend Logs:</strong></p>
+            <div class="url-box" style="margin-top: 10px;">
+                📱 iOS APP REQUEST: /auth/login?os=apple<br>
+                📱 iOS APP REQUEST: /auth/register?os=apple
+            </div>
+        </div>
+
+        <div class="info">
+            <h2>🔍 How to Verify</h2>
+            <ol style="margin-left: 20px; line-height: 1.8;">
+                <li>Connect iPhone to computer</li>
+                <li>Open Safari → Develop → [Your iPhone] → [My Coach Finder]</li>
+                <li>Click any test button above</li>
+                <li>Check Console tab for "[OSParameter] CRITICAL AUTH URL"</li>
+                <li>Check Network tab - request should have ?os=apple</li>
+                <li>Check backend logs for "os=apple" parameter</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Display current URL and check for os parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const osParam = urlParams.get('os');
+
+        document.getElementById('currentUrl').textContent = window.location.href;
+
+        if (osParam === 'apple') {
+            document.getElementById('osParam').textContent = '✅ YES';
+            document.getElementById('osParam').className = 'status yes';
+        } else {
+            document.getElementById('osParam').textContent = '❌ NO';
+            document.getElementById('osParam').className = 'status no';
+        }
+
+        // Test functions
+        function testJSLogin() {
+            console.log('[Test] JavaScript redirect to login');
+            window.location.href = 'https://app.my-coach-finder.com/auth/login';
+        }
+
+        function testJSRegister() {
+            console.log('[Test] JavaScript redirect to register');
+            window.location.href = 'https://app.my-coach-finder.com/auth/register';
+        }
+
+        function testSPALogin() {
+            console.log('[Test] SPA navigation to login');
+            window.history.pushState({}, '', 'https://app.my-coach-finder.com/auth/login');
+            alert('Check URL - should have ?os=apple');
+            // Reload to navigate properly
+            window.location.reload();
+        }
+
+        function testSPARegister() {
+            console.log('[Test] SPA navigation to register');
+            window.history.pushState({}, '', 'https://app.my-coach-finder.com/auth/register');
+            alert('Check URL - should have ?os=apple');
+            // Reload to navigate properly
+            window.location.reload();
+        }
+
+        function testOpenLogin() {
+            console.log('[Test] window.open to login');
+            window.open('https://app.my-coach-finder.com/auth/login', '_self');
+        }
+
+        function testOpenRegister() {
+            console.log('[Test] window.open to register');
+            window.open('https://app.my-coach-finder.com/auth/register', '_self');
+        }
+
+        // Log page load
+        console.log('=== Auth URL Test Page ===');
+        console.log('Current URL:', window.location.href);
+        console.log('os parameter:', osParam);
+        console.log('Ready to test auth URL navigation');
+    </script>
+</body>
+</html>
