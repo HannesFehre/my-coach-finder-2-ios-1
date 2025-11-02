@@ -160,8 +160,3 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 }
-
-// CRITICAL: Register plugin with Capacitor - WITHOUT THIS IT DOESN'T WORK!
-CAP_PLUGIN(OSParameterPlugin, "OSParameter",
-    CAP_PLUGIN_METHOD(addOSParameter, CAPPluginReturnPromise);
-)
