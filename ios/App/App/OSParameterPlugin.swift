@@ -12,6 +12,9 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
 
     override public func load() {
         NSLog("[OSParameter] ✅ Plugin loaded - will intercept ALL navigation to add os=apple")
+        NSLog("[OSParameter] 🎯 Critical URLs protected:")
+        NSLog("[OSParameter]    • /auth/login?os=apple")
+        NSLog("[OSParameter]    • /auth/register?os=apple")
 
         DispatchQueue.main.async { [weak self] in
             guard let webView = self?.bridge?.webView else { return }
@@ -28,7 +31,7 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
             }
 
-            NSLog("[OSParameter] ✅ Navigation interception active")
+            NSLog("[OSParameter] ✅ Navigation interception active - auth URLs will have os=apple")
         }
     }
 
