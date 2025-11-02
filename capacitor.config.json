@@ -1,6 +1,6 @@
 {
   "appId": "MyCoachFinder",
-  "appName": "My Coach Finder",
+  "appName": "My-Coach-Finder",
   "webDir": "www",
   "server": {
     "url": "https://app.my-coach-finder.com/go?os=apple",

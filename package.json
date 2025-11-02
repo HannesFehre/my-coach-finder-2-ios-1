@@ -1,7 +1,7 @@
 {
   "name": "my-coach-finder-ios",
   "version": "1.1.13",
-  "description": "My Coach Finder iOS App",
+  "description": "My-Coach-Finder iOS App",
   "main": "index.html",
   "scripts": {
     "build": "echo 'No build needed'",
@@ -13,7 +13,7 @@
     "ios",
     "webview"
   ],
-  "author": "My Coach Finder",
+  "author": "My-Coach-Finder",
   "license": "ISC",
   "devDependencies": {
     "@capacitor/cli": "^6.0.0"
