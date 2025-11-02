@@ -11,13 +11,22 @@ fi
 
 echo "📝 Patching Plugin.swift for GoogleSignIn 7.x API compatibility..."
 
+# Use Python for complex multiline replacement
+if command -v python3 &> /dev/null; then
+  python3 scripts/patch-google-auth-swift.py
+  exit $?
+fi
+
+# Fallback: Simple bash sed (only fixes resolveSignInCallWith, not refresh)
+echo "⚠️  Python not available, using basic bash patch (may not fix all issues)"
+
 # Create backup
 cp "$PLUGIN_SWIFT" "$PLUGIN_SWIFT.bak"
 
-# GoogleSignIn 7.x API changes:
+# GoogleSignIn 7.x API changes in resolveSignInCallWith function:
 # OLD: user.authentication.accessToken → NEW: user.accessToken.tokenString
 # OLD: user.authentication.idToken → NEW: user.idToken?.tokenString
-# OLD: user.authentication.refreshToken → NEW: user.refreshToken?.tokenString
+# OLD: user.authentication.refreshToken → NEW: user.refreshToken.tokenString (NOT optional!)
 
 # Patch accessToken
 sed -i.tmp 's/user\.authentication\.accessToken/user.accessToken.tokenString/g' "$PLUGIN_SWIFT"
@@ -25,8 +34,8 @@ sed -i.tmp 's/user\.authentication\.accessToken/user.accessToken.tokenString/g' 
 # Patch idToken (make it optional)
 sed -i.tmp 's/"idToken": user\.authentication\.idToken/"idToken": user.idToken?.tokenString ?? NSNull()/g' "$PLUGIN_SWIFT"
 
-# Patch refreshToken (make it optional)
-sed -i.tmp 's/"refreshToken": user\.authentication\.refreshToken/"refreshToken": user.refreshToken?.tokenString ?? NSNull()/g' "$PLUGIN_SWIFT"
+# Patch refreshToken (NOT optional in GoogleSignIn 7.x)
+sed -i.tmp 's/"refreshToken": user\.authentication\.refreshToken/"refreshToken": user.refreshToken.tokenString/g' "$PLUGIN_SWIFT"
 
 # Clean up temp files
 rm -f "$PLUGIN_SWIFT.tmp"
@@ -34,11 +43,12 @@ rm -f "$PLUGIN_SWIFT.tmp"
 # Verify the changes
 if grep -q "user.accessToken.tokenString" "$PLUGIN_SWIFT" && \
    grep -q "user.idToken?.tokenString" "$PLUGIN_SWIFT" && \
-   grep -q "user.refreshToken?.tokenString" "$PLUGIN_SWIFT"; then
+   grep -q "user.refreshToken.tokenString" "$PLUGIN_SWIFT"; then
   echo "✅ Successfully patched Plugin.swift for GoogleSignIn 7.x API"
   echo "   - accessToken: user.authentication.accessToken → user.accessToken.tokenString"
   echo "   - idToken: user.authentication.idToken → user.idToken?.tokenString"
-  echo "   - refreshToken: user.authentication.refreshToken → user.refreshToken?.tokenString"
+  echo "   - refreshToken: user.authentication.refreshToken → user.refreshToken.tokenString"
+  echo "⚠️  Note: refresh() function may still need manual fixes"
 else
   echo "❌ Failed to patch Plugin.swift"
   mv "$PLUGIN_SWIFT.bak" "$PLUGIN_SWIFT"
