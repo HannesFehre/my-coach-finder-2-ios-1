@@ -72,7 +72,7 @@ public class GoogleAuth: CAPPlugin {
         signInCall = call;
         DispatchQueue.main.async(execute: DispatchWorkItem {
             if self.googleSignIn.hasPreviousSignIn() && !self.forceAuthCode {
-                self.googleSignIn.restorePreviousSignIn() { user, error in
+                self.googleSignIn.restorePreviousSignIn { user, error in
                 if let error = error {
                     self.signInCall?.reject(error.localizedDescription);
                     return;
@@ -82,12 +82,16 @@ public class GoogleAuth: CAPPlugin {
             } else {
                 let presentingVc = self.bridge!.viewController!;
 
-                self.googleSignIn.signIn(with: self.googleSignInConfiguration, presenting: presentingVc, hint: nil, additionalScopes: self.additionalScopes) { user, error in
+                self.googleSignIn.signIn(withPresenting: presentingVc, hint: nil, additionalScopes: self.additionalScopes) { result, error in
                     if let error = error {
                         self.signInCall?.reject(error.localizedDescription, "\(error._code)");
                         return;
                     }
-                    self.resolveSignInCallWith(user: user!);
+                    guard let user = result?.user else {
+                        self.signInCall?.reject("Sign in failed - no user returned");
+                        return;
+                    }
+                    self.resolveSignInCallWith(user: user);
                 };
             }
         })
