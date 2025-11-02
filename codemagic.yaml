@@ -99,19 +99,9 @@ workflows:
           bash scripts/patch-google-auth-podspec.sh
           echo ""
 
-          # Run Swift patch (try Python first, fallback to bash)
-          echo "--- Running Swift patch ---"
-          if command -v python3 &> /dev/null; then
-            python3 scripts/patch-google-auth-swift.py
-          else
-            echo "⚠️  Python3 not available, using bash fallback"
-            bash scripts/patch-google-auth-swift.sh
-          fi
-          echo ""
-
-          # Run DispatchQueue patch (Swift 5 strict concurrency fix)
-          echo "--- Running DispatchQueue.main.async patch ---"
-          bash scripts/patch-dispatch-queue.sh
+          # Run Plugin.swift patch (foolproof copy approach)
+          echo "--- Copying pre-patched Plugin.swift ---"
+          bash scripts/patch-google-auth-copy.sh
           echo ""
 
           # Verify patches applied
