@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Complete patch for @codetrix-studio/capacitor-google-auth Plugin.swift for GoogleSignIn 7.x
-Fixes ALL API compatibility issues INCLUDING Swift 5 DispatchQueue syntax
+Fixes GoogleSignIn API compatibility issues (NOT DispatchQueue - that's handled by patch-dispatch-queue.sh)
 """
 
 import re
@@ -21,34 +21,6 @@ except FileNotFoundError:
 # Backup
 with open(PLUGIN_SWIFT + ".bak", 'w') as f:
     f.write(content)
-
-# Fix 0: Fix DispatchQueue.main.async trailing closure syntax FIRST
-# Swift 5 with strict concurrency (Xcode 16.4+) requires explicit execute: parameter
-# We need to fix EACH occurrence carefully
-
-# signIn function (lines 73-93)
-content = re.sub(
-    r'(func signIn\([^)]*\)\s*\{[^}]*signInCall = call;\s*)DispatchQueue\.main\.async\s*\{([^}]*self\.resolveSignInCallWith\(user: user!\);[^}]*\}\s*\}\s*)\}(\s*\})',
-    r'\1DispatchQueue.main.async(execute: {\2})\3',
-    content,
-    flags=re.DOTALL
-)
-
-# refresh function (lines 98-110)
-content = re.sub(
-    r'(func refresh\([^)]*\)\s*\{[^}]*DispatchQueue\.main\.async\s*)\{([^}]*call\.resolve\(authenticationData\);[^}]*)\}(\s*\})',
-    r'\1(execute: {\2})\3',
-    content,
-    flags=re.DOTALL
-)
-
-# signOut function (lines 115-119)
-content = re.sub(
-    r'(func signOut\([^)]*\)\s*\{[^}]*DispatchQueue\.main\.async\s*)\{([^}]*self\.googleSignIn\.signOut\(\);[^}]*)\}(\s*call\.resolve)',
-    r'\1(execute: {\2})\3',
-    content,
-    flags=re.DOTALL
-)
 
 # Fix 1: resolveSignInCallWith function
 # Replace authentication.accessToken → accessToken.tokenString
@@ -130,15 +102,6 @@ with open(PLUGIN_SWIFT, 'w') as f:
 # Verify changes
 errors = 0
 
-# Check DispatchQueue fix
-if 'DispatchQueue.main.async {' in content:
-    print("❌ Failed to patch DispatchQueue.main.async trailing closure")
-    errors += 1
-elif 'DispatchQueue.main.async(execute: {' in content:
-    print("✅ Patched DispatchQueue.main.async syntax")
-else:
-    print("⚠️  Warning: No DispatchQueue.main.async found")
-
 if 'user.accessToken.tokenString' not in content:
     print("❌ Failed to patch accessToken")
     errors += 1
@@ -175,8 +138,9 @@ if errors > 0:
     sys.exit(1)
 
 print("✅ Successfully patched Plugin.swift for GoogleSignIn 7.x API")
-print("   - DispatchQueue.main.async: trailing closure → explicit execute: parameter")
 print("   - accessToken: authentication.accessToken → accessToken.tokenString")
 print("   - idToken: authentication.idToken → idToken?.tokenString (optional)")
 print("   - refreshToken: authentication.refreshToken → refreshToken.tokenString")
 print("   - refresh() function updated for GoogleSignIn 7.x")
+print("")
+print("Note: DispatchQueue.main.async syntax will be fixed by patch-dispatch-queue.sh in the next step")
