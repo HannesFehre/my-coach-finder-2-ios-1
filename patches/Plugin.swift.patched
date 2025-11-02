@@ -70,7 +70,7 @@ public class GoogleAuth: CAPPlugin {
     @objc
     func signIn(_ call: CAPPluginCall) {
         signInCall = call;
-        DispatchQueue.main.async({
+        DispatchQueue.main.async(execute: DispatchWorkItem {
             if self.googleSignIn.hasPreviousSignIn() && !self.forceAuthCode {
                 self.googleSignIn.restorePreviousSignIn() { user, error in
                 if let error = error {
@@ -95,7 +95,7 @@ public class GoogleAuth: CAPPlugin {
 
     @objc
     func refresh(_ call: CAPPluginCall) {
-        DispatchQueue.main.async({
+        DispatchQueue.main.async(execute: DispatchWorkItem {
             if self.googleSignIn.currentUser == nil {
                 call.reject("User not logged in.");
                 return
@@ -112,7 +112,7 @@ public class GoogleAuth: CAPPlugin {
 
     @objc
     func signOut(_ call: CAPPluginCall) {
-        DispatchQueue.main.async({
+        DispatchQueue.main.async(execute: DispatchWorkItem {
             self.googleSignIn.signOut();
         })
         call.resolve();

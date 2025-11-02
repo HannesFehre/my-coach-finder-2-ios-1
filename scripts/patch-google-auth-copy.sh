@@ -38,8 +38,8 @@ errors=0
 if grep -q "DispatchQueue.main.async {" "$PLUGIN_SWIFT"; then
     echo "❌ ERROR: Still has old DispatchQueue trailing closure syntax!"
     errors=1
-elif grep -q "DispatchQueue.main.async({" "$PLUGIN_SWIFT"; then
-    count=$(grep -c "DispatchQueue.main.async({" "$PLUGIN_SWIFT")
+elif grep -q "DispatchQueue.main.async(execute: DispatchWorkItem {" "$PLUGIN_SWIFT"; then
+    count=$(grep -c "DispatchQueue.main.async(execute: DispatchWorkItem {" "$PLUGIN_SWIFT")
     echo "✅ DispatchQueue patch verified ($count occurrences)"
 else
     echo "⚠️  Warning: No DispatchQueue.main.async found"
