@@ -20,7 +20,12 @@ end
 target 'App' do
   capacitor_pods
   # Add your Pods here
-  # GoogleSignIn is managed by CodetrixStudioCapacitorGoogleAuth plugin
+
+  # Google Sign-In SDKs with Apple Privacy Manifest support
+  # Required to fix ITMS-91061 error - missing PrivacyInfo.xcprivacy
+  pod 'GoogleSignIn', '~> 7.1'
+  pod 'GTMAppAuth', '~> 4.1.1'
+  pod 'GTMSessionFetcher', '~> 3.3'
 end
 
 post_install do |installer|
