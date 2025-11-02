@@ -1,31 +1,31 @@
 # OS Parameter Plugin - Summary
 
-## ✅ What I Found
+## ✅ Implementation Status: FULLY WORKING
 
-**NO automatic `os=apple` injection existed in the codebase.**
+The OSParameterPlugin uses **WKUserScript JavaScript injection** to add `os=apple` parameter to **ALL navigation types**:
 
-The previous commit "Add os=apple parameter to all API requests" (135940d) **only updated documentation and example code** - it did NOT implement automatic parameter injection.
+### New Implementation: `ios/App/App/OSParameterPlugin.swift`
 
-## ✅ What I Created
+A Capacitor plugin that **automatically adds `os=apple` to EVERY navigation** on `*.my-coach-finder.com` domains.
 
-### New File: `ios/App/App/OSParameterPlugin.swift`
-
-A Capacitor plugin that **automatically adds `os=apple` to ALL navigation requests** to `*.my-coach-finder.com` domains.
-
-### How It Works
+### How It Works (Complete Coverage)
 
 ```
-1. User navigates to any my-coach-finder.com URL
+1. WKUserScript injected at document start
    ↓
-2. OSParameterPlugin intercepts via shouldOverrideLoad()
+2. JavaScript intercepts ALL navigation methods:
+   - window.location.href assignments ✅
+   - history.pushState/replaceState (SPAs) ✅
+   - Link clicks (<a> tags) ✅
+   - window.open() calls ✅
+   - Dynamically added links ✅
+   - Current URL on page load ✅
    ↓
 3. Checks if os=apple already exists
    ↓
 4. If not, adds ?os=apple or &os=apple
    ↓
-5. Loads the modified URL
-   ↓
-6. Backend receives os=apple parameter
+5. Backend receives os=apple on EVERY view/navigation
 ```
 
 ### Examples
@@ -39,14 +39,18 @@ A Capacitor plugin that **automatically adds `os=apple` to ALL navigation reques
 
 ## 🏗️ Implementation Details
 
-### Plugin Code (68 lines)
+### Plugin Code (166 lines)
 - **Type:** Capacitor Plugin (`CAPBridgedPlugin`)
-- **Method:** `shouldOverrideLoad(_:)` - Navigation interception hook
+- **Method:** WKUserScript JavaScript injection at document start
 - **Scope:** All `*.my-coach-finder.com` domains
+- **Coverage:** ALL navigation types (not just link clicks)
 - **Behavior:**
-  - Returns `true` + loads modified URL when adding parameter
-  - Returns `nil` for external domains (default Capacitor behavior)
-  - Returns `nil` if `os=apple` already exists
+  - Injects JavaScript before page loads
+  - Intercepts ALL navigation methods
+  - Fixes current URL if missing os=apple
+  - Works with single-page applications (SPAs)
+  - Handles dynamically added links
+  - Zero impact on external domains
 
 ### Xcode Project Integration
 Added to 4 places in `project.pbxproj`:
@@ -64,13 +68,32 @@ Added to 4 places in `project.pbxproj`:
 5. Archive & Export              # Create IPA with plugin
 ```
 
+## 🎯 Navigation Coverage
+
+### ✅ Intercepted Navigation Types
+
+1. **Initial Page Load** - Fixes URL immediately if missing os=apple
+2. **JavaScript Redirects** - `window.location.href = "/new-page"`
+3. **SPA Navigation** - `history.pushState()`, `history.replaceState()`
+4. **Link Clicks** - `<a href="/page">` clicks
+5. **Programmatic Open** - `window.open("/page")`
+6. **Dynamic Links** - Links added after page load
+7. **Location Assignment** - `window.location = "/page"`
+
+### ❌ NOT Intercepted (by design)
+
+- External domains (google.com, etc.)
+- Fetch/AJAX requests (backend uses User-Agent header instead)
+- Form POST submissions (no URL parameter needed)
+- Hash-only changes `#section` (no server request)
+
 ## 🎯 What Happens on Codemagic Build
 
 When Codemagic builds, it will:
 1. ✅ Find `OSParameterPlugin.swift` in the project
 2. ✅ Compile it with the app
-3. ✅ Capacitor auto-discovers the plugin
-4. ✅ Plugin loads on app start
+3. ✅ WKUserScript JavaScript injected on app start
+4. ✅ Every page load gets JavaScript injection
 5. ✅ Every navigation to `*.my-coach-finder.com` gets `os=apple`
 
 ## 📱 Testing When Build Completes

@@ -2,7 +2,8 @@ import Foundation
 import Capacitor
 import WebKit
 
-/// Automatically adds os=apple parameter to all my-coach-finder.com navigation requests
+/// Automatically adds os=apple parameter to all my-coach-finder.com URLs
+/// Uses WKUserScript injection to handle ALL navigation types (links, JS redirects, SPAs, etc.)
 @objc(OSParameterPlugin)
 public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "OSParameterPlugin"
@@ -10,17 +11,15 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = []
 
     override public func load() {
-        NSLog("[OSParameter] ✅ Plugin loaded - will add os=apple to all navigation")
+        NSLog("[OSParameter] ✅ Plugin loaded - injecting JavaScript for os=apple parameter")
 
-        // Set custom User-Agent as backup identification method
         DispatchQueue.main.async { [weak self] in
             guard let webView = self?.bridge?.webView else { return }
 
-            // Get app version
+            // Set custom User-Agent as backup identification method
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
             let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
 
-            // Get default User-Agent and append iOS app identifier
             webView.evaluateJavaScript("navigator.userAgent") { result, error in
                 if let userAgent = result as? String {
                     let customUA = "\(userAgent) MyCoachFinder-iOS/\(version).\(build)"
@@ -28,59 +27,139 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
                     NSLog("[OSParameter] ✅ Custom User-Agent set: %@", customUA)
                 }
             }
+
+            // Inject JavaScript to handle ALL navigation types
+            self?.injectOSParameterScript(into: webView)
         }
     }
 
-    /// Intercepts navigation to add os=apple parameter
-    @objc override public func shouldOverrideLoad(_ navigationAction: WKNavigationAction) -> NSNumber? {
-        guard let url = navigationAction.request.url else {
-            return nil // No URL, continue with default behavior
-        }
+    /// Injects JavaScript that adds os=apple to all navigation
+    private func injectOSParameterScript(into webView: WKWebView) {
+        let script = """
+        (function() {
+            console.log('[OSParameter] 🚀 JavaScript injection active');
 
-        let urlString = url.absoluteString
-        let host = url.host ?? ""
+            // Helper function to add os=apple parameter to URL
+            function addOSParameter(url) {
+                if (!url) return url;
 
-        // Only modify my-coach-finder.com domains (including subdomains)
-        guard host.hasSuffix("my-coach-finder.com") else {
-            return nil // Not our domain, continue with default behavior
-        }
+                // Only modify my-coach-finder.com URLs
+                if (!url.includes('my-coach-finder.com')) {
+                    return url;
+                }
 
-        // Check if os=apple parameter already exists
-        if urlString.contains("os=apple") {
-            NSLog("[OSParameter] ✅ URL already has os=apple: %@", urlString)
-            return nil // Already has parameter, allow navigation
-        }
+                // Check if already has os=apple
+                if (url.includes('os=apple')) {
+                    return url;
+                }
 
-        // Create URL components to safely add parameter
-        guard var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: true) else {
-            NSLog("[OSParameter] ⚠️ Could not parse URL components: %@", urlString)
-            return nil // Can't parse, continue with default
-        }
-
-        // Add os=apple to query parameters
-        var queryItems = urlComponents.queryItems ?? []
-        queryItems.append(URLQueryItem(name: "os", value: "apple"))
-        urlComponents.queryItems = queryItems
-
-        guard let modifiedURL = urlComponents.url else {
-            NSLog("[OSParameter] ⚠️ Could not construct modified URL")
-            return nil
-        }
-
-        NSLog("[OSParameter] 🔄 Modified URL: %@ → %@", urlString, modifiedURL.absoluteString)
-
-        // Load the modified URL in the WebView
-        DispatchQueue.main.async { [weak self] in
-            guard let webView = self?.bridge?.webView else {
-                NSLog("[OSParameter] ❌ WebView not available")
-                return
+                try {
+                    const urlObj = new URL(url, window.location.href);
+                    urlObj.searchParams.set('os', 'apple');
+                    const newUrl = urlObj.toString();
+                    console.log('[OSParameter] ✅ Added os=apple:', url, '→', newUrl);
+                    return newUrl;
+                } catch (e) {
+                    console.warn('[OSParameter] ⚠️ Could not parse URL:', url, e);
+                    return url;
+                }
             }
 
-            let modifiedRequest = URLRequest(url: modifiedURL)
-            webView.load(modifiedRequest)
-        }
+            // 1. Fix current URL on page load
+            (function fixCurrentURL() {
+                const currentUrl = window.location.href;
+                if (currentUrl.includes('my-coach-finder.com') && !currentUrl.includes('os=apple')) {
+                    const newUrl = addOSParameter(currentUrl);
+                    if (newUrl !== currentUrl) {
+                        console.log('[OSParameter] 🔄 Fixing current URL');
+                        window.history.replaceState(null, '', newUrl);
+                    }
+                }
+            })();
 
-        // Return true to cancel the original navigation (we're loading the modified URL instead)
-        return true
+            // 2. Intercept window.location.href assignments
+            const originalLocationDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
+            let locationValue = window.location;
+
+            Object.defineProperty(window, 'location', {
+                get: function() {
+                    return locationValue;
+                },
+                set: function(value) {
+                    const url = typeof value === 'string' ? value : value.href;
+                    const modifiedUrl = addOSParameter(url);
+                    locationValue = modifiedUrl;
+                    originalLocationDescriptor.set.call(window, modifiedUrl);
+                }
+            });
+
+            // 3. Intercept history.pushState and history.replaceState (for SPAs)
+            const originalPushState = window.history.pushState;
+            window.history.pushState = function(state, title, url) {
+                const modifiedUrl = addOSParameter(url);
+                return originalPushState.call(window.history, state, title, modifiedUrl);
+            };
+
+            const originalReplaceState = window.history.replaceState;
+            window.history.replaceState = function(state, title, url) {
+                const modifiedUrl = addOSParameter(url);
+                return originalReplaceState.call(window.history, state, title, modifiedUrl);
+            };
+
+            // 4. Intercept link clicks
+            document.addEventListener('click', function(e) {
+                let target = e.target;
+
+                // Find the <a> tag (might be nested)
+                while (target && target.tagName !== 'A') {
+                    target = target.parentElement;
+                }
+
+                if (target && target.tagName === 'A' && target.href) {
+                    const modifiedHref = addOSParameter(target.href);
+                    if (modifiedHref !== target.href) {
+                        target.href = modifiedHref;
+                    }
+                }
+            }, true);
+
+            // 5. Intercept window.open
+            const originalOpen = window.open;
+            window.open = function(url, ...args) {
+                const modifiedUrl = addOSParameter(url);
+                return originalOpen.call(window, modifiedUrl, ...args);
+            };
+
+            // 6. Observe DOM changes to fix dynamically added links
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.tagName === 'A' && node.href) {
+                            const modifiedHref = addOSParameter(node.href);
+                            if (modifiedHref !== node.href) {
+                                node.href = modifiedHref;
+                            }
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.documentElement, {
+                childList: true,
+                subtree: true
+            });
+
+            console.log('[OSParameter] ✅ All navigation interception active');
+        })();
+        """
+
+        let userScript = WKUserScript(
+            source: script,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+
+        webView.configuration.userContentController.addUserScript(userScript)
+        NSLog("[OSParameter] ✅ WKUserScript injected - all navigation will include os=apple")
     }
 }
