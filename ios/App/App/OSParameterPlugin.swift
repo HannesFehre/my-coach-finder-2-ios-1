@@ -3,18 +3,20 @@ import Capacitor
 import WebKit
 
 /// Automatically adds os=apple parameter to all my-coach-finder.com URLs
-/// Uses WKUserScript injection to handle ALL navigation types (links, JS redirects, SPAs, etc.)
+/// Uses direct JavaScript injection on every page load
 @objc(OSParameterPlugin)
-public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
+public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin, WKNavigationDelegate {
     public let identifier = "OSParameterPlugin"
     public let jsName = "OSParameter"
     public let pluginMethods: [CAPPluginMethod] = []
 
+    private weak var originalNavigationDelegate: WKNavigationDelegate?
+
     override public func load() {
-        NSLog("[OSParameter] ✅ Plugin loaded - injecting JavaScript for os=apple parameter")
+        NSLog("[OSParameter] ✅ Plugin loaded - will inject JavaScript on every page load")
 
         DispatchQueue.main.async { [weak self] in
-            guard let webView = self?.bridge?.webView else { return }
+            guard let self = self, let webView = self.bridge?.webView else { return }
 
             // Set custom User-Agent as backup identification method
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -28,15 +30,35 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
             }
 
-            // Inject JavaScript to handle ALL navigation types
-            self?.injectOSParameterScript(into: webView)
+            // Store original navigation delegate and set ourselves
+            self.originalNavigationDelegate = webView.navigationDelegate
+            webView.navigationDelegate = self
+
+            // Inject immediately for current page
+            self.injectOSParameterScript(into: webView)
         }
     }
 
-    /// Injects JavaScript that adds os=apple to all navigation
+    /// WKNavigationDelegate method - called when page finishes loading
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        NSLog("[OSParameter] 📄 Page loaded - injecting JavaScript")
+        injectOSParameterScript(into: webView)
+
+        // Forward to original delegate
+        originalNavigationDelegate?.webView?(webView, didFinish: navigation)
+    }
+
+    /// Injects JavaScript directly into the page
     private func injectOSParameterScript(into webView: WKWebView) {
         let script = """
         (function() {
+            // Prevent multiple injections
+            if (window.__OSParameterInjected) {
+                console.log('[OSParameter] Already injected, skipping');
+                return;
+            }
+            window.__OSParameterInjected = true;
+
             console.log('[OSParameter] 🚀 JavaScript injection active');
 
             // Helper function to add os=apple parameter to URL
@@ -77,36 +99,26 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
             })();
 
-            // 2. Intercept window.location.href assignments
-            const originalLocationDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
-            let locationValue = window.location;
-
-            Object.defineProperty(window, 'location', {
-                get: function() {
-                    return locationValue;
-                },
-                set: function(value) {
-                    const url = typeof value === 'string' ? value : value.href;
-                    const modifiedUrl = addOSParameter(url);
-                    locationValue = modifiedUrl;
-                    originalLocationDescriptor.set.call(window, modifiedUrl);
-                }
-            });
-
-            // 3. Intercept history.pushState and history.replaceState (for SPAs)
+            // 2. Intercept history.pushState and history.replaceState (for SPAs)
             const originalPushState = window.history.pushState;
             window.history.pushState = function(state, title, url) {
                 const modifiedUrl = addOSParameter(url);
+                console.log('[OSParameter] pushState:', url, '→', modifiedUrl);
                 return originalPushState.call(window.history, state, title, modifiedUrl);
             };
 
             const originalReplaceState = window.history.replaceState;
             window.history.replaceState = function(state, title, url) {
+                // Don't intercept our own replaceState calls
+                if (arguments.callee.caller && arguments.callee.caller.toString().includes('fixCurrentURL')) {
+                    return originalReplaceState.call(window.history, state, title, url);
+                }
                 const modifiedUrl = addOSParameter(url);
+                console.log('[OSParameter] replaceState:', url, '→', modifiedUrl);
                 return originalReplaceState.call(window.history, state, title, modifiedUrl);
             };
 
-            // 4. Intercept link clicks
+            // 3. Intercept link clicks
             document.addEventListener('click', function(e) {
                 let target = e.target;
 
@@ -118,48 +130,41 @@ public class OSParameterPlugin: CAPPlugin, CAPBridgedPlugin {
                 if (target && target.tagName === 'A' && target.href) {
                     const modifiedHref = addOSParameter(target.href);
                     if (modifiedHref !== target.href) {
+                        console.log('[OSParameter] Link click:', target.href, '→', modifiedHref);
                         target.href = modifiedHref;
                     }
                 }
             }, true);
 
-            // 5. Intercept window.open
-            const originalOpen = window.open;
-            window.open = function(url, ...args) {
-                const modifiedUrl = addOSParameter(url);
-                return originalOpen.call(window, modifiedUrl, ...args);
-            };
-
-            // 6. Observe DOM changes to fix dynamically added links
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    mutation.addedNodes.forEach(function(node) {
-                        if (node.tagName === 'A' && node.href) {
-                            const modifiedHref = addOSParameter(node.href);
-                            if (modifiedHref !== node.href) {
-                                node.href = modifiedHref;
-                            }
-                        }
-                    });
-                });
-            });
-
-            observer.observe(document.documentElement, {
-                childList: true,
-                subtree: true
+            // 4. Intercept window.location assignments
+            let locationSetter = Object.getOwnPropertyDescriptor(window.location.constructor.prototype, 'href').set;
+            Object.defineProperty(window.location, 'href', {
+                set: function(url) {
+                    const modifiedUrl = addOSParameter(url);
+                    console.log('[OSParameter] location.href:', url, '→', modifiedUrl);
+                    locationSetter.call(this, modifiedUrl);
+                }
             });
 
             console.log('[OSParameter] ✅ All navigation interception active');
         })();
         """
 
-        let userScript = WKUserScript(
-            source: script,
-            injectionTime: .atDocumentStart,
-            forMainFrameOnly: false
-        )
+        webView.evaluateJavaScript(script) { result, error in
+            if let error = error {
+                NSLog("[OSParameter] ❌ JavaScript injection failed: %@", error.localizedDescription)
+            } else {
+                NSLog("[OSParameter] ✅ JavaScript injected successfully")
+            }
+        }
+    }
 
-        webView.configuration.userContentController.addUserScript(userScript)
-        NSLog("[OSParameter] ✅ WKUserScript injected - all navigation will include os=apple")
+    // Forward other WKNavigationDelegate methods to original delegate
+    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        if let original = originalNavigationDelegate {
+            original.webView?(webView, decidePolicyFor: navigationAction, decisionHandler: decisionHandler)
+        } else {
+            decisionHandler(.allow)
+        }
     }
 }
