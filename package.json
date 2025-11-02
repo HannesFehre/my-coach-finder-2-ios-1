@@ -6,7 +6,7 @@
   "scripts": {
     "build": "echo 'No build needed'",
     "ios": "cap sync ios && cap open ios",
-    "postinstall": "bash scripts/patch-google-auth-podspec.sh"
+    "postinstall": "bash scripts/patch-google-auth-podspec.sh && bash scripts/patch-google-auth-swift.sh"
   },
   "keywords": [
     "capacitor",
