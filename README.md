@@ -283,9 +283,10 @@ This app features **fully native iOS Google Sign-In** using:
 
 ## Documentation
 
-- **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - Current project status and goals
-- **[IOS_BUILD_STATUS.md](IOS_BUILD_STATUS.md)** - Detailed build information
-- **[codemagic.yaml](codemagic.yaml)** - CI/CD configuration
+- **[CICD_SETUP_COMPLETE.md](CICD_SETUP_COMPLETE.md)** - **Complete CI/CD setup guide** (START HERE)
+- **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - Project status and roadmap
+- **[IOS_BUILD_STATUS.md](IOS_BUILD_STATUS.md)** - Build history
+- **[codemagic.yaml](codemagic.yaml)** - CI/CD workflow configuration
 
 ## License
 
