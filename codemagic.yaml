@@ -18,7 +18,61 @@ workflows:
       - name: Install npm dependencies
         script: |
           npm install
-      
+
+      - name: Patch Google Auth plugin for GoogleSignIn 7.x
+        script: |
+          set -e
+          echo "========================================="
+          echo "Running Google Auth patches for GoogleSignIn 7.x compatibility..."
+          echo "========================================="
+
+          # Verify plugin exists
+          if [ ! -f "node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift" ]; then
+            echo "❌ ERROR: Plugin.swift not found!"
+            exit 1
+          fi
+
+          echo "✅ Plugin.swift found"
+          echo ""
+
+          # Run podspec patch
+          echo "--- Running podspec patch ---"
+          bash scripts/patch-google-auth-podspec.sh
+          echo ""
+
+          # Run Plugin.swift patch (foolproof copy approach)
+          echo "--- Copying pre-patched Plugin.swift ---"
+          bash scripts/patch-google-auth-copy.sh
+          echo ""
+
+          # Verify patches applied
+          echo "--- Verifying patches ---"
+          if grep -q "user.accessToken.tokenString" "node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift"; then
+            echo "✅ Swift patch verified: accessToken.tokenString found"
+          else
+            echo "❌ ERROR: Swift patch failed - accessToken.tokenString not found!"
+            exit 1
+          fi
+
+          if grep -q "GoogleSignIn', '~> 7.1'" "node_modules/@codetrix-studio/capacitor-google-auth/CodetrixStudioCapacitorGoogleAuth.podspec"; then
+            echo "✅ Podspec patch verified: GoogleSignIn 7.1 found"
+          else
+            echo "❌ ERROR: Podspec patch failed - GoogleSignIn 7.1 not found!"
+            exit 1
+          fi
+
+          if grep -q "DispatchQueue.main.async(execute: {" "node_modules/@codetrix-studio/capacitor-google-auth/ios/Plugin/Plugin.swift"; then
+            echo "✅ DispatchQueue patch verified: async(execute:) found"
+          else
+            echo "❌ ERROR: DispatchQueue patch failed - still using trailing closure syntax!"
+            exit 1
+          fi
+
+          echo ""
+          echo "========================================="
+          echo "✅ All patches applied and verified successfully!"
+          echo "========================================="
+
       - name: Install CocoaPods dependencies
         script: |
           cd ios/App && pod install
