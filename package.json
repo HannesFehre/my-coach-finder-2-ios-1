@@ -5,7 +5,8 @@
   "main": "index.html",
   "scripts": {
     "build": "echo 'No build needed'",
-    "ios": "cap sync ios && cap open ios"
+    "ios": "cap sync ios && cap open ios",
+    "postinstall": "bash scripts/patch-google-auth-podspec.sh"
   },
   "keywords": [
     "capacitor",
